@@ -29,3 +29,10 @@ class AuthService:
         await session.commit()
         await session.refresh(new_user)
         return new_user
+
+    async def save_refresh_token(self, user: User, refresh_token: str, session: AsyncSession) -> User:
+        user.refresh_token = refresh_token
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+        return user
