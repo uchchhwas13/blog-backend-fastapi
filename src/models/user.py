@@ -20,6 +20,10 @@ class User(SQLModel, table=True):
     )
     email: str
     name: str
+    profile_image_url: str = Field(
+        default="/images/default.png",
+        nullable=False
+    )
     password_hash: str = Field(exclude=True)
     refresh_token: Optional[str] = Field(
         sa_column=Column(String, nullable=True)
