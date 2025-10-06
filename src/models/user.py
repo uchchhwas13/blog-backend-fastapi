@@ -25,6 +25,9 @@ class User(SQLModel, table=True):
         nullable=False
     )
     password_hash: str = Field(exclude=True)
+    role: str = Field(sa_column=Column(
+        pg.VARCHAR, nullable=False, server_default="user"
+    ))
     refresh_token: Optional[str] = Field(
         sa_column=Column(String, nullable=True)
     )
