@@ -2,11 +2,14 @@ import time
 from fastapi import UploadFile, File, Form, APIRouter, HTTPException, status
 from pathlib import Path
 from sqlmodel.ext.asyncio.session import AsyncSession
-from src.schemas.user import UserCreateModel, UserModel
+from src.schemas.api_response import APIResponse
+from src.schemas.user import LoginResponse, UserCreateModel, UserLoginModel, UserModel, UserResponse
 from src.services.auth_service import AuthService
 from src.db.main import get_session
 from typing import Annotated
 from fastapi import Depends
+
+from src.utils import create_access_token, create_refresh_token, verify_password
 
 auth_router = APIRouter()
 UPLOAD_DIR = Path("uploads")
@@ -79,3 +82,45 @@ async def create_user(
 
     new_user = await auth_service.create_user(user_data, session)
     return new_user
+
+
+@auth_router.post('/signin', response_model=APIResponse[LoginResponse], status_code=status.HTTP_200_OK)
+async def login_user(login_data: UserLoginModel, session: Annotated[AsyncSession, Depends(get_session)]):
+    email = login_data.email
+    password = login_data.password
+
+    user = await auth_service.get_user_by_email(email, session)
+
+    if user is not None:
+        password_valid = verify_password(password, user.password_hash)
+        if password_valid:
+            access_token = create_access_token(user_data={
+                'email': user.email,
+                'user_uid': str(user.id),
+                'role': user.role
+            })
+
+            refresh_token = create_refresh_token(
+                user_data={
+                    'email': user.email,
+                    'user_uid': str(user.id),
+                    'role': user.role
+                }
+            )
+
+            await auth_service.save_refresh_token(user, refresh_token, session)
+
+            return APIResponse(data=LoginResponse(
+                access_token=access_token,
+                refresh_token=refresh_token,
+                user=UserResponse(
+                    email=user.email,
+                    id=str(user.id),
+                    name=user.name
+                )
+            ), message="Login successful", success=True)
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Invalid Email or Password"
+    )
