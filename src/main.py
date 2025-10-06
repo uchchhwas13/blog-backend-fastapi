@@ -15,4 +15,4 @@ app = FastAPI(
 register_middleware(app)
 app.mount("/images", StaticFiles(directory="images"), name="images")
 app.include_router(blog_router, prefix="/api/blogs", tags=['blogs'])
-app.include_router(auth_router, prefix="/api/auth", tags=['auth'])
+app.include_router(auth_router, prefix="/user", tags=['auth'])
