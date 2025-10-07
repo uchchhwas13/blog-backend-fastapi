@@ -9,9 +9,10 @@ class AddBlogPostPayload(BaseCamelModel):
     cover_image_url: str
 
 
-class BlogCreatedBy(BaseCamelModel):
+class AuthorInfo(BaseCamelModel):
     id: str
     name: str
+    image_url: str
 
 
 class BlogModel(BaseCamelModel):
@@ -19,7 +20,7 @@ class BlogModel(BaseCamelModel):
     title: str
     body: str
     cover_image_url: str
-    created_by: BlogCreatedBy
+    created_by: AuthorInfo
     created_at: datetime
 
 
@@ -32,3 +33,26 @@ class BlogItem(BaseCamelModel):
 
 class BlogListResponse(BaseCamelModel):
     blogs: list[BlogItem]
+
+
+class BlogDetail(BaseCamelModel):
+    id: str
+    title: str
+    body: str
+    cover_image_url: str
+    is_liked_by_user: bool
+    total_likes: int
+    created_by: AuthorInfo
+    created_at: datetime
+
+
+class Comment(BaseCamelModel):
+    id: str
+    content: str
+    created_by: AuthorInfo
+    created_at: datetime
+
+
+class BlogWithCommentsData(BaseCamelModel):
+    blog: BlogDetail
+    comments: list[Comment]
