@@ -1,5 +1,4 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
-from fastapi import UploadFile
 from src.models.blog import Blog
 from src.models.user import User
 from src.schemas.blog import AddBlogPostPayload, BlogModel, BlogCreatedBy
@@ -14,15 +13,12 @@ class BlogService:
     async def add_blog_post(self,
                             payload: AddBlogPostPayload,
                             user: User,
-                            file: UploadFile,
                             session: AsyncSession
                             ) -> BlogModel:
-        file_path = f"/uploads/{file.filename}"
 
         new_blog = Blog(**payload.model_dump(),
-                        cover_image_url=file_path,
                         created_by=user.id)
-
+        new_blog.creator = user
         session.add(new_blog)
         await session.commit()
 

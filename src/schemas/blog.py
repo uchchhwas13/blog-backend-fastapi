@@ -5,6 +5,7 @@ from datetime import datetime
 class AddBlogPostPayload(BaseModel):
     title: str
     body: str
+    cover_image_url: str
 
 
 class BlogCreatedBy(BaseModel):

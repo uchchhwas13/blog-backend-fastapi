@@ -1,33 +1,72 @@
 from src.schemas.blog import AddBlogPostPayload
 from src.services.blog_service import BlogService
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
 from src.dependencies import get_current_user_from_token
 from src.models.user import User
 from src.schemas.api_response import APIResponse
 from src.schemas.blog import AddBlogPostPayload, BlogModel
-from typing import Annotated
+from pathlib import Path
+import time
 
 blog_router = APIRouter()
 blog_service = BlogService()
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
+MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MB
+
+
+def validate_file(file: UploadFile, content: bytes) -> None:
+    """Validate file type and size."""
+    if not file.filename:
+        return
+    ext = file.filename.split(".")[-1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail="File too large. Max size allowed is 1MB"
+        )
+
+
+async def blog_data_with_image(
+    cover_image: UploadFile,
+    title: str = Form(...),
+    body: str = Form(...)
+) -> AddBlogPostPayload:
+    content = await cover_image.read()
+    validate_file(cover_image, content)
+
+    timestamp = int(time.time())
+    file_name = f"{timestamp}-{cover_image.filename}"
+    file_path = UPLOAD_DIR / file_name
+
+    with open(file_path, "wb") as buffer:
+        buffer.write(content)
+
+    image_path = f"/uploads/{file_name}"
+    return AddBlogPostPayload(
+        title=title,
+        body=body,
+        cover_image_url=image_path
+    )
 
 
 @blog_router.post("/", response_model=APIResponse[BlogModel], status_code=status.HTTP_201_CREATED)
-async def handle_add_blog_post(
-    title: str = Form(...),
-    body: str = Form(...),
-    cover_image: UploadFile = File(...),
+async def add_blog_post(
+    blog_data: AddBlogPostPayload = Depends(blog_data_with_image),
     current_user: User = Depends(get_current_user_from_token),
     session: AsyncSession = Depends(get_session),
+
 ):
     if not current_user:
         raise HTTPException(status_code=401, detail="Unauthorized")
-
-    if not cover_image:
-        raise HTTPException(status_code=400, detail="File upload failed")
-
-    blog_data = AddBlogPostPayload(title=title, body=body)
-    data = await blog_service.add_blog_post(blog_data, current_user, cover_image, session)
+    data = await blog_service.add_blog_post(blog_data, current_user, session)
 
     return APIResponse(data=data, success=True, message="Blog post created successfully")
