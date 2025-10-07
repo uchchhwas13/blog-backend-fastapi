@@ -35,7 +35,6 @@ class BlogService:
     async def get_blog_list(self, session: AsyncSession) -> list[BlogItem]:
         statement = select(Blog).order_by(desc(Blog.created_at))
         result = await session.exec(statement)
-        blogs = result.all()
         blog_items = list(
             map(
                 lambda blog: BlogItem(
@@ -44,7 +43,7 @@ class BlogService:
                     cover_image_url=build_file_url(blog.cover_image_url),
                     created_at=blog.created_at
                 ),
-                blogs
+                result
             )
         )
         return blog_items
