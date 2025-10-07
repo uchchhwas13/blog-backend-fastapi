@@ -65,3 +65,17 @@ class AuthService:
         await session.commit()
 
         return TokenPairResponse(access_token=new_access_token, refresh_token=new_refresh_token)
+
+    async def remove_refresh_token(self, user_id: str, session: AsyncSession) -> None:
+        user = await self.get_user_by_id(user_id, session)
+        if user:
+            user.refresh_token = None
+        await session.commit()
+
+    async def get_user_by_id(self, user_id: str, session: AsyncSession) -> Optional[User]:
+        statement = select(User).where(User.id == user_id)
+
+        result = await session.exec(statement)
+
+        user = result.first()
+        return user

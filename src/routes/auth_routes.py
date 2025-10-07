@@ -3,7 +3,7 @@ from fastapi import UploadFile, File, Form, APIRouter, HTTPException, status
 from pathlib import Path
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.schemas.api_response import APIResponse
-from src.schemas.user import LoginResponse, TokenPairResponse, TokenRefreshRequest, UserCreateModel, UserLoginModel, UserModel, UserResponse
+from src.schemas.user import LogOutResponse, LoginResponse, LogoutRequestModel, TokenPairResponse, TokenRefreshRequest, UserCreateModel, UserLoginModel, UserModel, UserResponse
 from src.services.auth_service import AuthService
 from src.db.main import get_session
 from typing import Annotated
@@ -146,3 +146,10 @@ async def refresh_access_token(request_body: TokenRefreshRequest, session: Annot
         request_body.refresh_token, user_id, session
     )
     return APIResponse(data=tokenResponse, message="Token refreshed successfully", success=True)
+
+
+@auth_router.post('/logout', response_model=LogOutResponse, status_code=status.HTTP_200_OK)
+async def log_out_user(request_model: LogoutRequestModel, session: AsyncSession = Depends(get_session)):
+    await auth_service.remove_refresh_token(request_model.user_id, session)
+
+    return LogOutResponse(message="Logged out successfully", success=True)

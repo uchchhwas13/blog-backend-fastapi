@@ -48,3 +48,12 @@ class TokenPairResponse(BaseCamelModel):
 
 class TokenRefreshRequest(BaseCamelModel):
     refresh_token: str
+
+
+class LogOutResponse(BaseCamelModel):
+    message: str
+    success: bool
+
+
+class LogoutRequestModel(BaseCamelModel):
+    user_id: str
