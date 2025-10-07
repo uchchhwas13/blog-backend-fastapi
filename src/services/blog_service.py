@@ -1,7 +1,8 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import select, desc
 from src.models.blog import Blog
 from src.models.user import User
-from src.schemas.blog import AddBlogPostPayload, BlogModel, BlogCreatedBy
+from src.schemas.blog import AddBlogPostPayload, BlogItem, BlogModel, BlogCreatedBy
 
 
 def build_file_url(path: str) -> str:
@@ -30,3 +31,20 @@ class BlogService:
             created_by=BlogCreatedBy(id=str(user.id), name=user.name),
             created_at=new_blog.created_at,
         )
+
+    async def get_blog_list(self, session: AsyncSession) -> list[BlogItem]:
+        statement = select(Blog).order_by(desc(Blog.created_at))
+        result = await session.exec(statement)
+        blogs = result.all()
+        blog_items = list(
+            map(
+                lambda blog: BlogItem(
+                    id=blog.id,
+                    title=blog.title,
+                    cover_image_url=build_file_url(blog.cover_image_url),
+                    created_at=blog.created_at
+                ),
+                blogs
+            )
+        )
+        return blog_items

@@ -1,4 +1,5 @@
-from src.schemas.blog import AddBlogPostPayload
+from typing import Annotated
+from src.schemas.blog import AddBlogPostPayload, BlogListResponse
 from src.services.blog_service import BlogService
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form, status
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -53,3 +54,9 @@ async def add_blog_post(
     data = await blog_service.add_blog_post(blog_data, current_user, session)
 
     return APIResponse(data=data, success=True, message="Blog post created successfully")
+
+
+@blog_router.get('/', response_model=APIResponse[BlogListResponse], status_code=status.HTTP_200_OK)
+async def get_blog_list(session: Annotated[AsyncSession, Depends(get_session)]):
+    blog_list = await blog_service.get_blog_list(session)
+    return APIResponse(data=BlogListResponse(blogs=blog_list), success=True, message="Blog list fetched successfully")
