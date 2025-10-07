@@ -57,34 +57,45 @@ class BlogService:
         )
         return blog_items
 
-    async def get_blog_details(self, blog_id: str, user_id: UUID | None, session: AsyncSession) -> BlogWithCommentsData:
-        # 1. Fetch blog with relationships
-        statement = select(Blog).where(Blog.id == blog_id).options(
-            selectinload(Blog.author),
-            selectinload(Blog.likes),
-            selectinload(Blog.comments).selectinload(Comment.author)
-        )
-        blog_result = await session.exec(statement)
-        blog = blog_result.first()
+    async def get_blog_details(
+        self, blog_id: str, user_id: UUID | None, session: AsyncSession
+    ) -> BlogWithCommentsData:
+        blog = await self._fetch_blog_with_relationships(blog_id, session)
+        is_liked_by_user = self._check_if_user_liked(blog, user_id)
+        sanitized_blog = self._build_sanitized_blog(blog, is_liked_by_user)
+        sanitized_comments = self._build_sanitized_comments(blog.comments)
+        return BlogWithCommentsData(blog=sanitized_blog, comments=sanitized_comments)
 
+    async def _fetch_blog_with_relationships(
+        self, blog_id: str, session: AsyncSession
+    ) -> Blog:
+        statement = (
+            select(Blog)
+            .where(Blog.id == blog_id)
+            .options(
+                selectinload(Blog.author),
+                selectinload(Blog.likes),
+                selectinload(Blog.comments).selectinload(Comment.author),
+            )
+        )
+        result = await session.exec(statement)
+        blog = result.first()
         if not blog:
             raise HTTPException(status_code=404, detail="Blog not found")
+        return blog
 
-        # 2. Check if user liked this blog
-        is_liked_by_user = False
-        if user_id:
-            for like in blog.likes:
-                if like.user_id == user_id:
-                    is_liked_by_user = True
-                    break
+    def _check_if_user_liked(self, blog: Blog, user_id: UUID | None) -> bool:
+        if not user_id:
+            return False
+        return any(like.user_id == user_id for like in blog.likes)
 
-        # 3. Build sanitized blog response
+    def _build_sanitized_blog(self, blog: Blog, is_liked_by_user: bool) -> BlogDetail:
         author = blog.author
         if not author:
             raise HTTPException(
                 status_code=500, detail="Blog author not found")
 
-        sanitized_blog = BlogDetail(
+        return BlogDetail(
             id=str(blog.id),
             title=blog.title,
             body=blog.body,
@@ -94,26 +105,25 @@ class BlogService:
             created_by=AuthorInfo(
                 id=str(author.id),
                 name=author.name,
-                image_url=build_file_url(author.profile_image_url)
+                image_url=build_file_url(author.profile_image_url),
             ),
             created_at=blog.created_at,
         )
 
-        # 4. Build comments
+    def _build_sanitized_comments(self, comments: list[Comment]) -> list[CommentSchema]:
         sanitized_comments: list[CommentSchema] = []
-        for comment in blog.comments:
+        for comment in comments:
+            author = comment.author
             sanitized_comments.append(
                 CommentSchema(
                     id=str(comment.id),
                     content=comment.content,
                     created_by=AuthorInfo(
-                        id=str(comment.author.id),
-                        name=comment.author.name,
-                        image_url=build_file_url(
-                            comment.author.profile_image_url),
+                        id=str(author.id),
+                        name=author.name,
+                        image_url=build_file_url(author.profile_image_url),
                     ),
                     created_at=comment.created_at,
                 )
             )
-
-        return BlogWithCommentsData(blog=sanitized_blog, comments=sanitized_comments)
+        return sanitized_comments
