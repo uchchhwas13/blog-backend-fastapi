@@ -7,32 +7,15 @@ from src.dependencies import get_current_user_from_token
 from src.models.user import User
 from src.schemas.api_response import APIResponse
 from src.schemas.blog import AddBlogPostPayload, BlogModel
-from pathlib import Path
 import time
+from pathlib import Path
+from src.utils import validate_file
+
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
 
 blog_router = APIRouter()
 blog_service = BlogService()
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
-MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MB
-
-
-def validate_file(file: UploadFile, content: bytes) -> None:
-    """Validate file type and size."""
-    if not file.filename:
-        return
-    ext = file.filename.split(".")[-1].lower()
-    if ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
-        )
-    if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=400,
-            detail="File too large. Max size allowed is 1MB"
-        )
 
 
 async def blog_data_with_image(

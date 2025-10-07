@@ -6,6 +6,9 @@ import uuid
 import jwt
 from passlib.context import CryptContext
 from .config import config
+from pathlib import Path
+from fastapi import UploadFile
+from fastapi import HTTPException
 
 password_context = CryptContext(schemes=["bcrypt"])
 ACCESS_TOKEN_EXPIRY_DURATION = 300
@@ -104,4 +107,25 @@ def verify_refresh_token(token: str) -> Optional[dict[str, Any]]:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token"
+        )
+
+
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
+MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MB
+
+
+def validate_file(file: UploadFile, content: bytes) -> None:
+    """Validate file type and size."""
+    if not file.filename:
+        return
+    ext = file.filename.split(".")[-1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail="File too large. Max size allowed is 1MB"
         )

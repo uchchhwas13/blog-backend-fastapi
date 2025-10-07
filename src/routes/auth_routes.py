@@ -8,34 +8,14 @@ from src.services.auth_service import AuthService
 from src.db.main import get_session
 from typing import Annotated
 from fastapi import Depends
-
-from src.utils import create_access_token, create_refresh_token, verify_password, verify_refresh_token
+from src.utils import create_access_token, create_refresh_token, validate_file, verify_password, verify_refresh_token
 
 auth_router = APIRouter()
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
-MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MB
 
 auth_service = AuthService()
-
-
-def validate_file(file: UploadFile, content: bytes) -> None:
-    """Validate file type and size."""
-    if not file.filename:
-        return
-    ext = file.filename.split(".")[-1].lower()
-    if ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
-        )
-    if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=400,
-            detail="File too large. Max size allowed is 1MB"
-        )
 
 
 async def user_data_with_image(
