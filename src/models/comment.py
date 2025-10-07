@@ -1,9 +1,13 @@
 from datetime import datetime
-from typing import Optional
 from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
 from sqlalchemy import func
 import uuid
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .user import User
+    from .blog import Blog
 
 
 class Comment(SQLModel, table=True):
@@ -46,5 +50,5 @@ class Comment(SQLModel, table=True):
     )
 
     # Relationships
-    creator: Optional["User"] = Relationship(back_populates="comments")
-    blog: Optional["Blog"] = Relationship(back_populates="comments")
+    author: "User" = Relationship(back_populates="comments")
+    blog: "Blog" = Relationship(back_populates="comments")

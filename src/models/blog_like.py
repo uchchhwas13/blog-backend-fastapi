@@ -3,6 +3,11 @@ from sqlmodel import SQLModel, Field, Column, Relationship
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
 from sqlalchemy import func, UniqueConstraint
 import uuid
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .user import User
+    from .blog import Blog
 
 
 class BlogLike(SQLModel, table=True):
