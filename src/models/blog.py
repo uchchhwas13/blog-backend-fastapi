@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 from sqlmodel import SQLModel, Field, Relationship, Column
 import sqlalchemy.dialects.postgresql as pg
 from sqlalchemy import func
@@ -45,5 +44,5 @@ class Blog(SQLModel, table=True):
     )
 
     # Relationships
-    creator: Optional["User"] = Relationship(back_populates="blogs")
-    likes: list["BlogLike"] = Relationship(back_populates="blogs")
+    creator: "User" = Relationship(back_populates="blogs")
+    likes: list["BlogLike"] = Relationship(back_populates="blog")

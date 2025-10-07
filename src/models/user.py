@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
 import sqlalchemy.dialects.postgresql as pg
 from sqlalchemy import Column, String
 from sqlalchemy.sql import func
@@ -43,6 +43,8 @@ class User(SQLModel, table=True):
             onupdate=func.now()
         )
     )
+    blogs: list["Blog"] = Relationship(back_populates="creator")
+    blog_likes: list["BlogLike"] = Relationship(back_populates="user")
 
     def __repr__(self) -> str:
         return f"<User {self.email}>"

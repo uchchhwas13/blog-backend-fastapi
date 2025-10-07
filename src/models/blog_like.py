@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 from sqlmodel import SQLModel, Field, Column, Relationship
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
 from sqlalchemy import func, UniqueConstraint
@@ -46,5 +45,5 @@ class BlogLike(SQLModel, table=True):
     )
 
     # Relationships
-    blog: Optional["Blog"] = Relationship(back_populates="likes")
-    user: Optional["User"] = Relationship(back_populates="likes")
+    blog: "Blog" = Relationship(back_populates="likes")
+    user: "User" = Relationship(back_populates="blog_likes")
