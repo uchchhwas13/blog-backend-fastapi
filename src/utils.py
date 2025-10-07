@@ -14,7 +14,7 @@ REFRESH_TOKEN_EXPIRY_DURATION = 3600
 
 class UserDataDict(TypedDict):
     email: str
-    user_uid: str
+    user_id: str
     role: str
 
 

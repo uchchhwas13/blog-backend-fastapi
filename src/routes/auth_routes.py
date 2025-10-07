@@ -3,13 +3,13 @@ from fastapi import UploadFile, File, Form, APIRouter, HTTPException, status
 from pathlib import Path
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.schemas.api_response import APIResponse
-from src.schemas.user import LoginResponse, UserCreateModel, UserLoginModel, UserModel, UserResponse
+from src.schemas.user import LoginResponse, TokenPairResponse, TokenRefreshRequest, UserCreateModel, UserLoginModel, UserModel, UserResponse
 from src.services.auth_service import AuthService
 from src.db.main import get_session
 from typing import Annotated
 from fastapi import Depends
 
-from src.utils import create_access_token, create_refresh_token, verify_password
+from src.utils import create_access_token, create_refresh_token, verify_password, verify_refresh_token
 
 auth_router = APIRouter()
 UPLOAD_DIR = Path("uploads")
@@ -96,14 +96,14 @@ async def login_user(login_data: UserLoginModel, session: Annotated[AsyncSession
         if password_valid:
             access_token = create_access_token(user_data={
                 'email': user.email,
-                'user_uid': str(user.id),
+                'user_id': str(user.id),
                 'role': user.role
             })
 
             refresh_token = create_refresh_token(
                 user_data={
                     'email': user.email,
-                    'user_uid': str(user.id),
+                    'user_id': str(user.id),
                     'role': user.role
                 }
             )
@@ -124,3 +124,25 @@ async def login_user(login_data: UserLoginModel, session: Annotated[AsyncSession
         status_code=status.HTTP_403_FORBIDDEN,
         detail="Invalid Email or Password"
     )
+
+
+@auth_router.post('/token/refresh', response_model=APIResponse[TokenPairResponse], status_code=status.HTTP_201_CREATED)
+async def refresh_access_token(request_body: TokenRefreshRequest, session: Annotated[AsyncSession, Depends(get_session)]):
+    token_payload = verify_refresh_token(request_body.refresh_token)
+    if not token_payload:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid or expired refresh token"
+        )
+
+    user_id = token_payload.get("user", {}).get("user_id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid token payload"
+        )
+
+    tokenResponse = await auth_service.refresh_tokens(
+        request_body.refresh_token, user_id, session
+    )
+    return APIResponse(data=tokenResponse, message="Token refreshed successfully", success=True)

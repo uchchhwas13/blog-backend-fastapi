@@ -1,9 +1,11 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import Field, EmailStr
 from datetime import datetime
 import uuid
 
+from src.schemas.api_response import BaseCamelModel
 
-class UserCreateModel(BaseModel):
+
+class UserCreateModel(BaseCamelModel):
     name: str
     email: EmailStr
     password: str = Field(min_length=6)
@@ -11,7 +13,7 @@ class UserCreateModel(BaseModel):
     role: str = "user"
 
 
-class UserModel(BaseModel):
+class UserModel(BaseCamelModel):
     id: uuid.UUID
     email: str
     name: str
@@ -22,18 +24,27 @@ class UserModel(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class UserLoginModel(BaseModel):
+class UserLoginModel(BaseCamelModel):
     email: EmailStr
     password: str = Field(min_length=6)
 
 
-class UserResponse(BaseModel):
+class UserResponse(BaseCamelModel):
     email: EmailStr
     id: str
     name: str
 
 
-class LoginResponse(BaseModel):
+class LoginResponse(BaseCamelModel):
     access_token: str
     refresh_token: str
     user: UserResponse
+
+
+class TokenPairResponse(BaseCamelModel):
+    access_token: str
+    refresh_token: str
+
+
+class TokenRefreshRequest(BaseCamelModel):
+    refresh_token: str
