@@ -35,3 +35,23 @@ async def get_current_user_from_token(token_details: Annotated[HTTPAuthorization
     user_email = user_data.get("user", {}).get("email")
     user = await AuthService().get_user_by_email(user_email, session)
     return user
+
+
+async def get_optional_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(
+        HTTPBearer(auto_error=False)),
+    session: AsyncSession = Depends(get_session)
+) -> Optional[User]:
+    if not credentials:
+        return None
+
+    user_data = verify_access_token(credentials.credentials)
+    if not user_data:
+        return None
+
+    user_email = user_data.get("user", {}).get("email")
+    if not user_email:
+        return None
+
+    user = await AuthService().get_user_by_email(user_email, session)
+    return user

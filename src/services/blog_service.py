@@ -7,6 +7,7 @@ from src.schemas.blog import AddBlogPostPayload, BlogDetail, BlogItem, BlogModel
 from uuid import UUID
 from fastapi import HTTPException
 from src.schemas.blog import Comment as CommentSchema, AuthorInfo
+from sqlalchemy.orm import selectinload
 
 
 def build_file_url(path: str) -> str:
@@ -58,7 +59,6 @@ class BlogService:
 
     async def get_blog_details(self, blog_id: str, user_id: UUID | None, session: AsyncSession) -> BlogWithCommentsData:
         # 1. Fetch blog with relationships
-        from sqlalchemy.orm import selectinload
         statement = select(Blog).where(Blog.id == blog_id).options(
             selectinload(Blog.author),
             selectinload(Blog.likes),

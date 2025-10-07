@@ -1,10 +1,10 @@
-from typing import Annotated
+from typing import Annotated, Optional
 from src.schemas.blog import AddBlogPostPayload, BlogListResponse, BlogWithCommentsData
 from src.services.blog_service import BlogService
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
-from src.dependencies import get_current_user_from_token
+from src.dependencies import get_current_user_from_token, get_optional_current_user
 from src.models.user import User
 from src.schemas.api_response import APIResponse
 from src.schemas.blog import AddBlogPostPayload, BlogModel
@@ -66,7 +66,10 @@ async def get_blog_list(session: Annotated[AsyncSession, Depends(get_session)]):
 async def get_blog_details(
     blog_id: str,
     session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: Optional[User] = Depends(get_optional_current_user)
 
 ):
-    blog_details = await blog_service.get_blog_details(blog_id, None, session)
+    user_id = current_user.id if current_user else None
+    blog_details = await blog_service.get_blog_details(blog_id, user_id, session)
+
     return APIResponse(data=blog_details, success=True, message="Blog details fetched successfully")
