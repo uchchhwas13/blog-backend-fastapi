@@ -4,6 +4,12 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
 
+# Import all models to ensure relationships are resolved
+from src.models.user import User
+from src.models.blog import Blog
+from src.models.comment import Comment
+from src.models.blog_like import BlogLike
+
 async_engine = create_async_engine(
     config.DATABASE_URL)
 
