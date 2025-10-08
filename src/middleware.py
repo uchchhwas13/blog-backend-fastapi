@@ -32,7 +32,7 @@ def register_middleware(app: FastAPI):
                        allow_origins=["*"],
                        allow_methods=["*"],
                        allow_headers=["*"],
-                       allow_credentials=False,
+                       allow_credentials=True,
                        )
 
     app.add_middleware(TrustedHostMiddleware,

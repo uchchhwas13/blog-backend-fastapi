@@ -1,5 +1,5 @@
 import time
-from fastapi import UploadFile, File, Form, APIRouter, HTTPException, status
+from fastapi import UploadFile, Form, APIRouter, HTTPException, status
 from pathlib import Path
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.schemas.api_response import APIResponse
@@ -22,7 +22,8 @@ async def user_data_with_image(
     fullname: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
-    profile_image: UploadFile | None = File(None),
+    profile_image: UploadFile | None = Form(
+        None, alias="profileImage"),
 ) -> UserCreateModel:
     if profile_image:
         content = await profile_image.read()
@@ -43,7 +44,7 @@ async def user_data_with_image(
         name=fullname,
         email=email,
         password=password,
-        profile_image=image_path,
+        profile_image_url=image_path,
     )
 
 

@@ -1,7 +1,7 @@
 from typing import Annotated, Optional
 from src.services.blog_like_service import BlogLikeService
 from src.services.comment_service import CommentService
-from src.schemas.blog import AddBlogPostPayload, BlogLikeResponse, BlogListResponse, BlogWithCommentsResponse, CommentPayload, CommentResponse, LikePayload
+from src.schemas.blog import AddBlogPostPayload, BlogLikeResponse, BlogListResponse, BlogResponse, BlogWithCommentsResponse, CommentPayload, CommentResponse, LikePayload
 from src.services.blog_service import BlogService
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form, status
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -24,7 +24,7 @@ blog_like_service = BlogLikeService()
 
 
 async def blog_data_with_image(
-    cover_image: UploadFile,
+    cover_image: UploadFile = Form(..., alias="coverImage"),
     title: str = Form(...),
     body: str = Form(...)
 ) -> AddBlogPostPayload:
@@ -46,7 +46,7 @@ async def blog_data_with_image(
     )
 
 
-@blog_router.post("/", response_model=APIResponse[BlogModel], status_code=status.HTTP_201_CREATED)
+@blog_router.post("/", response_model=APIResponse[BlogResponse], status_code=status.HTTP_201_CREATED)
 async def add_blog_post(
     blog_data: AddBlogPostPayload = Depends(blog_data_with_image),
     current_user: User = Depends(get_current_user_from_token),
@@ -57,7 +57,7 @@ async def add_blog_post(
         raise HTTPException(status_code=401, detail="Unauthorized")
     data = await blog_service.add_blog_post(blog_data, current_user, session)
 
-    return APIResponse(data=data, success=True, message="Blog post created successfully")
+    return APIResponse(data=BlogResponse(blog=data), success=True, message="Blog post created successfully")
 
 
 @blog_router.get('/', response_model=APIResponse[BlogListResponse], status_code=status.HTTP_200_OK)

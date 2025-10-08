@@ -9,7 +9,7 @@ class UserCreateModel(CamelModel):
     name: str
     email: EmailStr
     password: str = Field(min_length=6)
-    profile_image: str = Field(default="/images/default.jpg")
+    profile_image_url: str = Field(default="/images/default.jpg")
     role: str = "user"
 
 

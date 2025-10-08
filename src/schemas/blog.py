@@ -24,6 +24,10 @@ class BlogModel(CamelModel):
     created_at: datetime
 
 
+class BlogResponse(CamelModel):
+    blog: BlogModel
+
+
 class BlogItem(CamelModel):
     id: uuid.UUID
     title: str
