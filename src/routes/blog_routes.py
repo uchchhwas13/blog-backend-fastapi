@@ -1,6 +1,6 @@
 from typing import Annotated, Optional
 from src.services.comment_service import CommentService
-from src.schemas.blog import AddBlogPostPayload, AuthorInfo, BlogListResponse, BlogWithCommentsResponse, Comment, CommentPayload, CommentResponse
+from src.schemas.blog import AddBlogPostPayload, BlogListResponse, BlogWithCommentsResponse, CommentPayload, CommentResponse
 from src.services.blog_service import BlogService
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form, status
 from sqlmodel.ext.asyncio.session import AsyncSession
