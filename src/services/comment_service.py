@@ -4,7 +4,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import insert, update
 from src.models.comment import Comment as CommentModel
 from src.models.user import User
-from src.schemas.blog import AuthorInfo, Comment, CommentResponse
+from src.schemas.blog import UserInfo, Comment, CommentResponse
 from src.utils import build_file_url
 
 
@@ -56,7 +56,7 @@ class CommentService:
             comment=Comment(
                 id=str(comment.id),
                 content=comment.content,
-                created_by=AuthorInfo(
+                created_by=UserInfo(
                     id=str(author.id),
                     name=author.name,
                     image_url=build_file_url(author.profile_image_url)

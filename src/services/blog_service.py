@@ -3,16 +3,12 @@ from sqlmodel import select, desc
 from src.models.blog import Blog
 from src.models.user import User
 from src.models.comment import Comment
-from src.schemas.blog import AddBlogPostPayload, BlogDetail, BlogItem, BlogModel, AuthorInfo, BlogWithCommentsResponse
+from src.schemas.blog import AddBlogPostPayload, BlogDetail, BlogItem, BlogModel, UserInfo, BlogWithCommentsResponse
 from uuid import UUID
 from fastapi import HTTPException
-from src.schemas.blog import Comment as CommentSchema, AuthorInfo
+from src.schemas.blog import Comment as CommentSchema, UserInfo
 from sqlalchemy.orm import selectinload
-
-
-def build_file_url(path: str) -> str:
-    base_url = "http://localhost:8000"
-    return f"{base_url}{path}"
+from src.utils import build_file_url
 
 
 class BlogService:
@@ -33,7 +29,7 @@ class BlogService:
             title=new_blog.title,
             body=new_blog.body,
             cover_image_url=build_file_url(new_blog.cover_image_url),
-            created_by=AuthorInfo(
+            created_by=UserInfo(
                 id=str(user.id),
                 name=user.name,
                 image_url=build_file_url(user.profile_image_url)
@@ -102,7 +98,7 @@ class BlogService:
             cover_image_url=build_file_url(blog.cover_image_url),
             is_liked_by_user=is_liked_by_user,
             total_likes=blog.like_count,
-            created_by=AuthorInfo(
+            created_by=UserInfo(
                 id=str(author.id),
                 name=author.name,
                 image_url=build_file_url(author.profile_image_url),
@@ -118,7 +114,7 @@ class BlogService:
                 CommentSchema(
                     id=str(comment.id),
                     content=comment.content,
-                    created_by=AuthorInfo(
+                    created_by=UserInfo(
                         id=str(author.id),
                         name=author.name,
                         image_url=build_file_url(author.profile_image_url),
