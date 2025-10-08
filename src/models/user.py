@@ -27,7 +27,7 @@ class User(SQLModel, table=True):
     email: str
     name: str
     profile_image_url: str = Field(
-        default="/images/default.png",
+        default="/images/default.jpg",
         nullable=False
     )
     password_hash: str = Field(exclude=True)
