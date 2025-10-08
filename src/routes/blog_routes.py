@@ -87,3 +87,16 @@ async def add_comment(
     comment = await comment_service.add_comment(blog_id, comment_data.content, current_user, session)
 
     return APIResponse(data=comment, success=True, message="Comment added successfully")
+
+
+@blog_router.put('/{blog_id}/comments/{comment_id}', response_model=APIResponse[CommentResponse], status_code=status.HTTP_200_OK)
+async def update_comment(
+    blog_id: str,
+    comment_id: str,
+    comment_data: CommentPayload,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: User = Depends(get_current_user_from_token)
+):
+    comment = await comment_service.update_comment(comment_id, comment_data.content, current_user, session)
+
+    return APIResponse(data=comment, success=True, message="Comment added successfully")
