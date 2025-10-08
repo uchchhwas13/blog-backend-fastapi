@@ -37,7 +37,7 @@ async def user_data_with_image(
 
         image_path = f"/uploads/{file_name}"
     else:
-        image_path = "/uploads/default.png"
+        image_path = "/uploads/default.jpg"
 
     return UserCreateModel(
         name=fullname,
@@ -47,7 +47,7 @@ async def user_data_with_image(
     )
 
 
-@auth_router.post("/signup", response_model=UserModel, status_code=status.HTTP_201_CREATED)
+@auth_router.post("/signup", response_model=APIResponse[UserModel], status_code=status.HTTP_201_CREATED)
 async def create_user(
     session: Annotated[AsyncSession, Depends(get_session)],
     user_data: UserCreateModel = Depends(user_data_with_image),
@@ -55,13 +55,14 @@ async def create_user(
     auth_service = AuthService()
 
     if await auth_service.user_exists(user_data.email, session):
+        print("user exists")
         raise HTTPException(
             status_code=400,
             detail="User with this email already exists"
         )
 
     new_user = await auth_service.create_user(user_data, session)
-    return new_user
+    return APIResponse(data=new_user, message="User created successfully", success=True)
 
 
 @auth_router.post('/signin', response_model=APIResponse[LoginResponse], status_code=status.HTTP_200_OK)
