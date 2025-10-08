@@ -68,3 +68,8 @@ class CommentResponse(BaseCamelModel):
 
 class LikePayload(BaseCamelModel):
     is_liked: bool
+
+
+class BlogLikeResponse(BaseCamelModel):
+    total_likes: int
+    users: list[AuthorInfo]

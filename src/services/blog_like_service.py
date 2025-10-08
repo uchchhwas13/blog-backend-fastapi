@@ -4,8 +4,12 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy import func
 from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
+from src.schemas.blog import AuthorInfo
 from src.models.blog import Blog
 from src.models.blog_like import BlogLike
+from sqlalchemy.orm import selectinload
+
+from src.utils import build_file_url
 
 
 class BlogLikeService:
@@ -70,3 +74,34 @@ class BlogLikeService:
             .where(Blog.id == blog_id)
             .values(like_count=func.greatest(Blog.like_count + delta, 0))
         )
+
+    async def get_total_likes(
+        self,
+        blog_id: str,
+        session: AsyncSession
+    ) -> list[AuthorInfo]:
+        await self._ensure_blog_exists(blog_id, session)
+
+        stmt = select(BlogLike).where(
+            (BlogLike.blog_id == blog_id) & (BlogLike.is_liked == True)
+        ).options(
+            selectinload(BlogLike.user)
+        )
+
+        result = await session.exec(stmt)
+        likes = result.all()
+
+        users: list[AuthorInfo] = []
+        for like in likes:
+            user = like.user
+            if not user:
+                continue
+            users.append(
+                AuthorInfo(
+                    id=str(user.id),
+                    name=user.name,
+                    image_url=build_file_url(
+                        user.profile_image_url)
+                )
+            )
+        return users

@@ -1,7 +1,7 @@
 from typing import Annotated, Optional
 from src.services.blog_like_service import BlogLikeService
 from src.services.comment_service import CommentService
-from src.schemas.blog import AddBlogPostPayload, BlogListResponse, BlogWithCommentsResponse, CommentPayload, CommentResponse, LikePayload
+from src.schemas.blog import AddBlogPostPayload, BlogLikeResponse, BlogListResponse, BlogWithCommentsResponse, CommentPayload, CommentResponse, LikePayload
 from src.services.blog_service import BlogService
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form, status
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -117,4 +117,17 @@ async def like_unlike_blog(
         data=LikePayload(is_liked=result),
         success=True,
         message=f"Blog {'liked' if result else 'unliked'} successfully"
+    )
+
+
+@blog_router.get('/{blog_id}/likes', response_model=APIResponse[BlogLikeResponse], status_code=status.HTTP_200_OK)
+async def get_blog_likes(
+    blog_id: str,
+    session: Annotated[AsyncSession, Depends(get_session)],
+):
+    users = await blog_like_service.get_total_likes(blog_id, session)
+    return APIResponse(
+        data=BlogLikeResponse(total_likes=len(users), users=users),
+        success=True,
+        message="Total likes fetched successfully"
     )
