@@ -64,3 +64,7 @@ class CommentPayload(BaseCamelModel):
 
 class CommentResponse(BaseCamelModel):
     comment: Comment
+
+
+class LikePayload(BaseCamelModel):
+    is_liked: bool

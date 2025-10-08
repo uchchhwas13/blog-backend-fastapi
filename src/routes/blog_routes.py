@@ -1,6 +1,7 @@
 from typing import Annotated, Optional
+from src.services.blog_like_service import BlogLikeService
 from src.services.comment_service import CommentService
-from src.schemas.blog import AddBlogPostPayload, BlogListResponse, BlogWithCommentsResponse, CommentPayload, CommentResponse
+from src.schemas.blog import AddBlogPostPayload, BlogListResponse, BlogWithCommentsResponse, CommentPayload, CommentResponse, LikePayload
 from src.services.blog_service import BlogService
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form, status
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -19,6 +20,7 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 blog_router = APIRouter()
 blog_service = BlogService()
 comment_service = CommentService()
+blog_like_service = BlogLikeService()
 
 
 async def blog_data_with_image(
@@ -100,3 +102,19 @@ async def update_comment(
     comment = await comment_service.update_comment(comment_id, comment_data.content, current_user, session)
 
     return APIResponse(data=comment, success=True, message="Comment added successfully")
+
+
+@blog_router.post('/{blog_id}/likes', response_model=APIResponse[LikePayload], status_code=status.HTTP_200_OK)
+async def like_unlike_blog(
+    blog_id: str,
+    payload: LikePayload,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: User = Depends(get_current_user_from_token)
+):
+    result = await blog_like_service.update_like_status(blog_id, current_user.id, payload.is_liked, session)
+
+    return APIResponse(
+        data=LikePayload(is_liked=result),
+        success=True,
+        message=f"Blog {'liked' if result else 'unliked'} successfully"
+    )
