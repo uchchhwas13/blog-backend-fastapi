@@ -53,6 +53,14 @@ class Comment(BaseCamelModel):
     created_at: datetime
 
 
-class BlogWithCommentsData(BaseCamelModel):
+class BlogWithCommentsResponse(BaseCamelModel):
     blog: BlogDetail
     comments: list[Comment]
+
+
+class CommentPayload(BaseCamelModel):
+    content: str
+
+
+class CommentResponse(BaseCamelModel):
+    comment: Comment

@@ -3,7 +3,7 @@ from sqlmodel import select, desc
 from src.models.blog import Blog
 from src.models.user import User
 from src.models.comment import Comment
-from src.schemas.blog import AddBlogPostPayload, BlogDetail, BlogItem, BlogModel, AuthorInfo, BlogWithCommentsData
+from src.schemas.blog import AddBlogPostPayload, BlogDetail, BlogItem, BlogModel, AuthorInfo, BlogWithCommentsResponse
 from uuid import UUID
 from fastapi import HTTPException
 from src.schemas.blog import Comment as CommentSchema, AuthorInfo
@@ -59,12 +59,12 @@ class BlogService:
 
     async def get_blog_details(
         self, blog_id: str, user_id: UUID | None, session: AsyncSession
-    ) -> BlogWithCommentsData:
+    ) -> BlogWithCommentsResponse:
         blog = await self._fetch_blog_with_relationships(blog_id, session)
         is_liked_by_user = self._check_if_user_liked(blog, user_id)
         sanitized_blog = self._build_sanitized_blog(blog, is_liked_by_user)
         sanitized_comments = self._build_sanitized_comments(blog.comments)
-        return BlogWithCommentsData(blog=sanitized_blog, comments=sanitized_comments)
+        return BlogWithCommentsResponse(blog=sanitized_blog, comments=sanitized_comments)
 
     async def _fetch_blog_with_relationships(
         self, blog_id: str, session: AsyncSession

@@ -6,7 +6,6 @@ import uuid
 import jwt
 from passlib.context import CryptContext
 from .config import config
-from pathlib import Path
 from fastapi import UploadFile
 from fastapi import HTTPException
 
@@ -129,3 +128,8 @@ def validate_file(file: UploadFile, content: bytes) -> None:
             status_code=400,
             detail="File too large. Max size allowed is 1MB"
         )
+
+
+def build_file_url(path: str) -> str:
+    base_url = "http://localhost:3000"
+    return f"{base_url}{path}"

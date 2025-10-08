@@ -1,5 +1,6 @@
 from typing import Annotated, Optional
-from src.schemas.blog import AddBlogPostPayload, BlogListResponse, BlogWithCommentsData
+from src.services.comment_service import CommentService
+from src.schemas.blog import AddBlogPostPayload, AuthorInfo, BlogListResponse, BlogWithCommentsResponse, Comment, CommentPayload, CommentResponse
 from src.services.blog_service import BlogService
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form, status
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -17,6 +18,7 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 blog_router = APIRouter()
 blog_service = BlogService()
+comment_service = CommentService()
 
 
 async def blog_data_with_image(
@@ -62,7 +64,7 @@ async def get_blog_list(session: Annotated[AsyncSession, Depends(get_session)]):
     return APIResponse(data=BlogListResponse(blogs=blog_list), success=True, message="Blog list fetched successfully")
 
 
-@blog_router.get('/{blog_id}', response_model=APIResponse[BlogWithCommentsData], status_code=status.HTTP_200_OK)
+@blog_router.get('/{blog_id}', response_model=APIResponse[BlogWithCommentsResponse], status_code=status.HTTP_200_OK)
 async def get_blog_details(
     blog_id: str,
     session: Annotated[AsyncSession, Depends(get_session)],
@@ -73,3 +75,15 @@ async def get_blog_details(
     blog_details = await blog_service.get_blog_details(blog_id, user_id, session)
 
     return APIResponse(data=blog_details, success=True, message="Blog details fetched successfully")
+
+
+@blog_router.post('/{blog_id}/comments', response_model=APIResponse[CommentResponse], status_code=status.HTTP_201_CREATED)
+async def add_comment(
+    blog_id: str,
+    comment_data: CommentPayload,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    current_user: User = Depends(get_current_user_from_token)
+):
+    comment = await comment_service.add_comment(blog_id, comment_data.content, current_user, session)
+
+    return APIResponse(data=comment, success=True, message="Comment added successfully")
