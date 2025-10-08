@@ -1,21 +1,21 @@
 from datetime import datetime
-from src.schemas.api_response import BaseCamelModel
+from fastapi_camelcase import CamelModel
 import uuid
 
 
-class AddBlogPostPayload(BaseCamelModel):
+class AddBlogPostPayload(CamelModel):
     title: str
     body: str
     cover_image_url: str
 
 
-class UserInfo(BaseCamelModel):
+class UserInfo(CamelModel):
     id: str
     name: str
     image_url: str
 
 
-class BlogModel(BaseCamelModel):
+class BlogModel(CamelModel):
     id: str
     title: str
     body: str
@@ -24,18 +24,18 @@ class BlogModel(BaseCamelModel):
     created_at: datetime
 
 
-class BlogItem(BaseCamelModel):
+class BlogItem(CamelModel):
     id: uuid.UUID
     title: str
     cover_image_url: str
     created_at: datetime
 
 
-class BlogListResponse(BaseCamelModel):
+class BlogListResponse(CamelModel):
     blogs: list[BlogItem]
 
 
-class BlogDetail(BaseCamelModel):
+class BlogDetail(CamelModel):
     id: str
     title: str
     body: str
@@ -46,30 +46,30 @@ class BlogDetail(BaseCamelModel):
     created_at: datetime
 
 
-class Comment(BaseCamelModel):
+class Comment(CamelModel):
     id: str
     content: str
     created_by: UserInfo
     created_at: datetime
 
 
-class BlogWithCommentsResponse(BaseCamelModel):
+class BlogWithCommentsResponse(CamelModel):
     blog: BlogDetail
     comments: list[Comment]
 
 
-class CommentPayload(BaseCamelModel):
+class CommentPayload(CamelModel):
     content: str
 
 
-class CommentResponse(BaseCamelModel):
+class CommentResponse(CamelModel):
     comment: Comment
 
 
-class LikePayload(BaseCamelModel):
+class LikePayload(CamelModel):
     is_liked: bool
 
 
-class BlogLikeResponse(BaseCamelModel):
+class BlogLikeResponse(CamelModel):
     total_likes: int
     users: list[UserInfo]

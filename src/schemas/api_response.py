@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Generic, TypeVar, Any, Dict, Union, Type
+from typing import Generic, TypeVar
+from fastapi_camelcase import CamelModel
 
 T = TypeVar("T")
 
@@ -21,26 +21,7 @@ def to_snake(string: str) -> str:
     return result.lstrip("_")
 
 
-class BaseCamelModel(BaseModel):
-    class Config:
-        alias_generator = to_camel
-        populate_by_name = True
-        by_alias = True  # This ensures output uses camelCase aliases
-
-    @classmethod
-    def model_validate(cls: Type["BaseCamelModel"], obj: Union[Dict[str, Any], Any], **kwargs: Any) -> "BaseCamelModel":
-        if isinstance(obj, dict):
-            converted: Dict[str, Any] = {}
-            for k, v in obj.items():
-                if isinstance(k, str):
-                    converted[to_snake(k)] = v
-                else:
-                    converted[str(k)] = v
-            obj = converted
-        return super().model_validate(obj, **kwargs)
-
-
-class APIResponse(BaseCamelModel, Generic[T]):
+class APIResponse(CamelModel, Generic[T]):
     data: T
     message: str
     success: bool

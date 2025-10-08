@@ -2,18 +2,18 @@ from pydantic import Field, EmailStr
 from datetime import datetime
 import uuid
 
-from src.schemas.api_response import BaseCamelModel
+from fastapi_camelcase import CamelModel
 
 
-class UserCreateModel(BaseCamelModel):
+class UserCreateModel(CamelModel):
     name: str
     email: EmailStr
     password: str = Field(min_length=6)
-    profile_image: str = Field(default="/images/default.png")
+    profile_image: str = Field(default="/images/default.jpg")
     role: str = "user"
 
 
-class UserModel(BaseCamelModel):
+class UserModel(CamelModel):
     id: uuid.UUID
     email: str
     name: str
@@ -24,36 +24,36 @@ class UserModel(BaseCamelModel):
     model_config = {"from_attributes": True}
 
 
-class UserLoginModel(BaseCamelModel):
+class UserLoginModel(CamelModel):
     email: EmailStr
     password: str = Field(min_length=6)
 
 
-class UserResponse(BaseCamelModel):
+class UserResponse(CamelModel):
     email: EmailStr
     id: str
     name: str
 
 
-class LoginResponse(BaseCamelModel):
+class LoginResponse(CamelModel):
     access_token: str
     refresh_token: str
     user: UserResponse
 
 
-class TokenPairResponse(BaseCamelModel):
+class TokenPairResponse(CamelModel):
     access_token: str
     refresh_token: str
 
 
-class TokenRefreshRequest(BaseCamelModel):
+class TokenRefreshRequest(CamelModel):
     refresh_token: str
 
 
-class LogOutResponse(BaseCamelModel):
+class LogOutResponse(CamelModel):
     message: str
     success: bool
 
 
-class LogoutRequestModel(BaseCamelModel):
+class LogoutRequestModel(CamelModel):
     user_id: str
