@@ -1,7 +1,7 @@
 from uuid import UUID
 from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy import insert, update
+from sqlmodel import select, insert
 from src.models.comment import Comment as CommentModel
 from src.models.user import User
 from src.schemas.blog import UserInfo, Comment, CommentResponse
@@ -33,22 +33,23 @@ class CommentService:
         user: User,
         session: AsyncSession,
     ) -> CommentResponse:
+        statement = select(CommentModel).where(
+            CommentModel.id == UUID(comment_id))
+        result = await session.exec(statement)
+        comment = result.first()
 
-        stmt = (
-            update(CommentModel)
-            .where(CommentModel.id == UUID(comment_id))
-            .values(content=new_content)
-            .returning(CommentModel)
-        )
-
-        result = await session.exec(stmt)
-        updated_comment = result.scalar_one_or_none()
-
-        if updated_comment is None:
+        if comment is None:
             raise HTTPException(status_code=404, detail="Comment not found")
 
+        if comment.author.id != user.id:
+            raise HTTPException(
+                status_code=403, detail="You are not allowed to edit this comment")
+
+        comment.content = new_content
         await session.commit()
-        response = self._to_comment_response(updated_comment, user)
+        await session.refresh(comment)
+
+        response = self._to_comment_response(comment, user)
         return response
 
     def _to_comment_response(self, comment: CommentModel, author: User) -> CommentResponse:
