@@ -1,7 +1,5 @@
 from typing import Optional
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from ..models.user import User
 from ..models.user import User
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
