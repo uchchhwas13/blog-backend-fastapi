@@ -69,9 +69,10 @@ class BlogService:
             select(Blog)
             .where(Blog.id == blog_id)
             .options(
-                selectinload(Blog.author),
-                selectinload(Blog.likes),
-                selectinload(Blog.comments).selectinload(Comment.author),
+                selectinload(Blog.author),  # type: ignore[arg-type]
+                selectinload(Blog.likes),  # type: ignore[arg-type]
+                selectinload(Blog.comments).selectinload(  # type: ignore[arg-type]
+                    Comment.author),  # type: ignore[arg-type]
             )
         )
         result = await session.exec(statement)
