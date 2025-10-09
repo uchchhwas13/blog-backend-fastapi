@@ -7,7 +7,6 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from src.schemas.blog import UserInfo
 from src.models.blog import Blog
 from src.models.blog_like import BlogLike
-from sqlalchemy.orm import selectinload
 
 from src.utils import build_file_url
 
@@ -59,7 +58,7 @@ class BlogLikeService:
                 is_liked=is_liked
             )
             .on_conflict_do_update(
-                index_elements=[BlogLike.blog_id, BlogLike.user_id],
+                index_elements=["blog_id", "user_id"],
                 set_={"is_liked": is_liked, "updated_at": func.now()},
             )
         )
@@ -84,8 +83,6 @@ class BlogLikeService:
 
         stmt = select(BlogLike).where(
             (BlogLike.blog_id == blog_id) & (BlogLike.is_liked == True)
-        ).options(
-            selectinload(BlogLike.user)
         )
 
         result = await session.exec(stmt)
