@@ -1,7 +1,7 @@
 from uuid import UUID, uuid4
 from sqlmodel import select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy import func
+from sqlalchemy import func, cast, Boolean
 from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.schemas.blog import UserInfo
@@ -70,7 +70,7 @@ class BlogLikeService:
         delta = 1 if is_liked else -1
         await session.exec(
             update(Blog)
-            .where(Blog.id == blog_id)
+            .where(cast(Blog.id == blog_id, Boolean))
             .values(like_count=func.greatest(Blog.like_count + delta, 0))
         )
 
