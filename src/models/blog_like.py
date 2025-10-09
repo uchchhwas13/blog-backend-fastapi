@@ -50,5 +50,7 @@ class BlogLike(SQLModel, table=True):
     )
 
     # Relationships
-    blog: "Blog" = Relationship(back_populates="likes")
-    user: "User" = Relationship(back_populates="blog_likes")
+    blog: "Blog" = Relationship(
+        back_populates="likes",  sa_relationship_kwargs={"lazy": "selectin"})
+    user: "User" = Relationship(
+        back_populates="blog_likes",  sa_relationship_kwargs={"lazy": "selectin"})

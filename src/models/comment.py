@@ -50,5 +50,7 @@ class Comment(SQLModel, table=True):
     )
 
     # Relationships
-    author: "User" = Relationship(back_populates="comments")
-    blog: "Blog" = Relationship(back_populates="comments")
+    author: "User" = Relationship(
+        back_populates="comments", sa_relationship_kwargs={"lazy": "selectin"})
+    blog: "Blog" = Relationship(
+        back_populates="comments", sa_relationship_kwargs={"lazy": "selectin"})
