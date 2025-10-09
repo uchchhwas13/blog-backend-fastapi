@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class Comment(SQLModel, table=True):
-    __tablename__ = "comments"
+    __tablename__ = "comments"  # type: ignore[arg-type]
 
     id: uuid.UUID = Field(
         sa_column=Column(

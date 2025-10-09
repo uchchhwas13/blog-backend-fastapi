@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class BlogLike(SQLModel, table=True):
-    __tablename__ = "blog_likes"
+    __tablename__ = "blog_likes"  # type: ignore[arg-type]
 
     id: uuid.UUID = Field(
         default_factory=uuid.uuid4,

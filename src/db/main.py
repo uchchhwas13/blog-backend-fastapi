@@ -5,10 +5,10 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
 
 # Import all models to ensure relationships are resolved
-from src.models.user import User
-from src.models.blog import Blog
-from src.models.comment import Comment
-from src.models.blog_like import BlogLike
+from src.models.user import User  # type: ignore[arg-type]
+from src.models.blog import Blog  # type: ignore[arg-type]
+from src.models.comment import Comment  # type: ignore[arg-type]
+from src.models.blog_like import BlogLike  # type: ignore[arg-type]
 
 async_engine = create_async_engine(
     config.DATABASE_URL)

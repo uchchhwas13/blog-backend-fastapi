@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class Blog(SQLModel, table=True):
-    __tablename__ = "blogs"
+    __tablename__ = "blogs"  # type: ignore[arg-type]
 
     id: uuid.UUID = Field(
         sa_column=Column(

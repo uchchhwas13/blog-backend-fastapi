@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class User(SQLModel, table=True):
-    __tablename__ = "users"
+    __tablename__ = "users"  # type: ignore[arg-type]
 
     id: uuid.UUID = Field(
         sa_column=Column(
