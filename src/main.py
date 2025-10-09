@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from src.middleware import register_middleware
+from src.middleware import register_logging_middleware
+from src.error_handlers import register_exception_handlers
 from .routes.blog_routes import blog_router
 from .routes.auth_routes import auth_router
 
@@ -12,7 +13,10 @@ app = FastAPI(
     version=version
 )
 
-register_middleware(app)
+# Register middleware and exception handlers
+register_logging_middleware(app)
+register_exception_handlers(app)
+
 app.mount("/images", StaticFiles(directory="images"), name="images")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.include_router(blog_router, prefix="/blogs", tags=['blogs'])
