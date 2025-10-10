@@ -1,47 +1,37 @@
 from uuid import UUID
-from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select, insert
+from src.repositories.comment_repository import CommentRepository
 from src.models.comment import Comment as CommentModel
 from src.models.user import User
-from src.schemas.blog import UserInfo, Comment, CommentResponse
+from src.schemas.blog import CommentCreateModel, UserInfo, Comment, CommentResponse
 from src.utils import build_file_url
 from src.exceptions import ResourceNotFoundError, DatabaseError, AuthorizationError
 
 
 class CommentService:
-    async def add_comment(self,
-                          blog_id: str,
-                          content: str,
-                          user: User,
-                          session: AsyncSession,
-                          ) -> CommentResponse:
-        try:
-            stmt = insert(CommentModel).values(
-                content=content,
-                blog_id=blog_id,
-                created_by=user.id
-            ).returning(CommentModel)
-            result = await session.exec(stmt)
-            await session.commit()
+    def __init__(self, comment_repo: CommentRepository):
+        self.comment_repo = comment_repo
 
-            comment = result.scalar_one()
-            response = self._to_comment_response(comment, user)
-            return response
+    async def add_comment(
+        self,
+        comment_data: CommentCreateModel,
+        user: User
+    ) -> CommentResponse:
+        try:
+            comment = CommentModel(
+                **comment_data.model_dump(),
+            )
+            created_comment = await self.comment_repo.create(comment)
+            return self._to_comment_response(created_comment, user)
         except Exception:
-            await session.rollback()
             raise DatabaseError("Failed to add comment")
 
     async def update_comment(
         self,
         comment_id: str,
         new_content: str,
-        user: User,
-        session: AsyncSession,
+        user: User
     ) -> CommentResponse:
-        statement = select(CommentModel).where(
-            CommentModel.id == UUID(comment_id))
-        result = await session.exec(statement)
-        comment = result.first()
+        comment = await self.comment_repo.get_by_id(UUID(comment_id))
 
         if comment is None:
             raise ResourceNotFoundError("Comment", comment_id)
@@ -49,12 +39,11 @@ class CommentService:
         if comment.author.id != user.id:
             raise AuthorizationError(
                 "You are not allowed to edit this comment")
-        comment.content = new_content
-        await session.commit()
-        await session.refresh(comment)
 
-        response = self._to_comment_response(comment, user)
-        return response
+        comment.content = new_content
+        updated_comment = await self.comment_repo.update(comment)
+
+        return self._to_comment_response(updated_comment, user)
 
     def _to_comment_response(self, comment: CommentModel, author: User) -> CommentResponse:
         return CommentResponse(
