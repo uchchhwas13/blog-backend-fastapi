@@ -66,6 +66,12 @@ class CommentPayload(CamelModel):
     content: str
 
 
+class CommentCreateModel(CamelModel):
+    blog_id: str
+    content: str
+    created_by: uuid.UUID
+
+
 class CommentResponse(CamelModel):
     comment: Comment
 

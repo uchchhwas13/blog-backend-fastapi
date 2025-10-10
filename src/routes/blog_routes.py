@@ -1,15 +1,16 @@
 from typing import Annotated, Optional
 from src.services.blog_like_service import BlogLikeService
 from src.services.comment_service import CommentService
-from src.schemas.blog import AddBlogPostPayload, BlogLikeResponse, BlogListResponse, BlogResponse, BlogWithCommentsResponse, CommentPayload, CommentResponse, LikePayload
+from src.schemas.blog import AddBlogPostPayload, BlogLikeResponse, BlogListResponse, BlogResponse, BlogWithCommentsResponse, CommentPayload, CommentResponse, CommentCreateModel, LikePayload
 from src.services.blog_service import BlogService
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
 from src.dependencies import get_current_user_from_token, get_optional_current_user
+from src.dependencies_repositories import BlogRepositoryDep, CommentRepositoryDep, BlogLikeRepositoryDep
 from src.models.user import User
 from src.schemas.api_response import APIResponse
-from src.schemas.blog import AddBlogPostPayload, BlogModel
+from src.schemas.blog import AddBlogPostPayload
 import time
 from pathlib import Path
 from src.utils import validate_file
@@ -18,9 +19,6 @@ UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 blog_router = APIRouter()
-blog_service = BlogService()
-comment_service = CommentService()
-blog_like_service = BlogLikeService()
 
 
 async def blog_data_with_image(
@@ -48,33 +46,35 @@ async def blog_data_with_image(
 
 @blog_router.post("/", response_model=APIResponse[BlogResponse], status_code=status.HTTP_201_CREATED)
 async def add_blog_post(
+    blog_repo: BlogRepositoryDep,
     blog_data: AddBlogPostPayload = Depends(blog_data_with_image),
     current_user: User = Depends(get_current_user_from_token),
-    session: AsyncSession = Depends(get_session),
-
 ):
     if not current_user:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    data = await blog_service.add_blog_post(blog_data, current_user, session)
+
+    blog_service = BlogService(blog_repo)
+    data = await blog_service.add_blog_post(blog_data, current_user)
 
     return APIResponse(data=BlogResponse(blog=data), success=True, message="Blog post created successfully")
 
 
 @blog_router.get('/', response_model=APIResponse[BlogListResponse], status_code=status.HTTP_200_OK)
-async def get_blog_list(session: Annotated[AsyncSession, Depends(get_session)]):
-    blog_list = await blog_service.get_blog_list(session)
+async def get_blog_list(blog_repo: BlogRepositoryDep):
+    blog_service = BlogService(blog_repo)
+    blog_list = await blog_service.get_blog_list()
     return APIResponse(data=BlogListResponse(blogs=blog_list), success=True, message="Blog list fetched successfully")
 
 
 @blog_router.get('/{blog_id}', response_model=APIResponse[BlogWithCommentsResponse], status_code=status.HTTP_200_OK)
 async def get_blog_details(
     blog_id: str,
-    session: Annotated[AsyncSession, Depends(get_session)],
+    blog_repo: BlogRepositoryDep,
     current_user: Optional[User] = Depends(get_optional_current_user)
-
 ):
+    blog_service = BlogService(blog_repo)
     user_id = current_user.id if current_user else None
-    blog_details = await blog_service.get_blog_details(blog_id, user_id, session)
+    blog_details = await blog_service.get_blog_details(blog_id, user_id)
 
     return APIResponse(data=blog_details, success=True, message="Blog details fetched successfully")
 
@@ -83,10 +83,13 @@ async def get_blog_details(
 async def add_comment(
     blog_id: str,
     comment_data: CommentPayload,
-    session: Annotated[AsyncSession, Depends(get_session)],
+    comment_repo: CommentRepositoryDep,
     current_user: User = Depends(get_current_user_from_token)
 ):
-    comment = await comment_service.add_comment(blog_id, comment_data.content, current_user, session)
+    comment_service = CommentService(comment_repo)
+    model = CommentCreateModel(
+        blog_id=blog_id, content=comment_data.content, created_by=current_user.id)
+    comment = await comment_service.add_comment(model, current_user)
 
     return APIResponse(data=comment, success=True, message="Comment added successfully")
 
@@ -96,12 +99,13 @@ async def update_comment(
     blog_id: str,
     comment_id: str,
     comment_data: CommentPayload,
-    session: Annotated[AsyncSession, Depends(get_session)],
+    comment_repo: CommentRepositoryDep,
     current_user: User = Depends(get_current_user_from_token)
 ):
-    comment = await comment_service.update_comment(comment_id, comment_data.content, current_user, session)
+    comment_service = CommentService(comment_repo)
+    comment = await comment_service.update_comment(comment_id, comment_data.content, current_user)
 
-    return APIResponse(data=comment, success=True, message="Comment added successfully")
+    return APIResponse(data=comment, success=True, message="Comment updated successfully")
 
 
 @blog_router.post('/{blog_id}/likes', response_model=APIResponse[LikePayload], status_code=status.HTTP_200_OK)
@@ -109,8 +113,11 @@ async def like_unlike_blog(
     blog_id: str,
     payload: LikePayload,
     session: Annotated[AsyncSession, Depends(get_session)],
+    blog_repo: BlogRepositoryDep,
+    blog_like_repo: BlogLikeRepositoryDep,
     current_user: User = Depends(get_current_user_from_token)
 ):
+    blog_like_service = BlogLikeService(blog_repo, blog_like_repo)
     result = await blog_like_service.update_like_status(blog_id, current_user.id, payload.is_liked, session)
 
     return APIResponse(
@@ -123,9 +130,11 @@ async def like_unlike_blog(
 @blog_router.get('/{blog_id}/likes', response_model=APIResponse[BlogLikeResponse], status_code=status.HTTP_200_OK)
 async def get_blog_likes(
     blog_id: str,
-    session: Annotated[AsyncSession, Depends(get_session)],
+    blog_repo: BlogRepositoryDep,
+    blog_like_repo: BlogLikeRepositoryDep,
 ):
-    users = await blog_like_service.get_total_likes(blog_id, session)
+    blog_like_service = BlogLikeService(blog_repo, blog_like_repo)
+    users = await blog_like_service.get_total_likes(blog_id)
     return APIResponse(
         data=BlogLikeResponse(total_likes=len(users), users=users),
         success=True,

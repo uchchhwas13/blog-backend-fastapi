@@ -1,79 +1,67 @@
-from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select, desc
+from src.repositories.blog_repository import BlogRepository
 from src.models.blog import Blog
 from src.models.user import User
 from src.models.comment import Comment
 from src.schemas.blog import AddBlogPostPayload, BlogDetail, BlogItem, BlogModel, UserInfo, BlogWithCommentsResponse
 from uuid import UUID
-from src.schemas.blog import Comment as CommentSchema, UserInfo
+from src.schemas.blog import Comment as CommentSchema
 from src.utils import build_file_url
 from src.exceptions import ResourceNotFoundError, DatabaseError
 
 
 class BlogService:
-    async def add_blog_post(self,
-                            payload: AddBlogPostPayload,
-                            user: User,
-                            session: AsyncSession
-                            ) -> BlogModel:
+    def __init__(self, blog_repo: BlogRepository):
+        self.blog_repo = blog_repo
+
+    async def add_blog_post(
+        self,
+        payload: AddBlogPostPayload,
+        user: User
+    ) -> BlogModel:
         try:
-            new_blog = Blog(**payload.model_dump(),
-                            created_by=user.id)
-            session.add(new_blog)
-            await session.commit()
-            await session.refresh(new_blog)
+            new_blog = Blog(**payload.model_dump(), created_by=user.id)
+            created_blog = await self.blog_repo.create(new_blog)
 
             return BlogModel(
-                id=str(new_blog.id),
-                title=new_blog.title,
-                body=new_blog.body,
-                cover_image_url=build_file_url(new_blog.cover_image_url),
+                id=str(created_blog.id),
+                title=created_blog.title,
+                body=created_blog.body,
+                cover_image_url=build_file_url(created_blog.cover_image_url),
                 created_by=UserInfo(
                     id=str(user.id),
                     name=user.name,
                     image_url=build_file_url(user.profile_image_url)
                 ),
-                created_at=new_blog.created_at,
+                created_at=created_blog.created_at,
             )
         except Exception:
-            await session.rollback()
             raise DatabaseError("Failed to create blog post")
 
-    async def get_blog_list(self, session: AsyncSession) -> list[BlogItem]:
-        statement = select(Blog).order_by(desc(Blog.created_at))
-        result = await session.exec(statement)
-        blog_items = list(
-            map(
-                lambda blog: BlogItem(
-                    id=blog.id,
-                    title=blog.title,
-                    cover_image_url=build_file_url(blog.cover_image_url),
-                    created_at=blog.created_at
-                ),
-                result
+    async def get_blog_list(self) -> list[BlogItem]:
+        blogs = await self.blog_repo.get_all_ordered_by_date()
+        
+        return [
+            BlogItem(
+                id=blog.id,
+                title=blog.title,
+                cover_image_url=build_file_url(blog.cover_image_url),
+                created_at=blog.created_at
             )
-        )
-        return blog_items
+            for blog in blogs
+        ]
 
     async def get_blog_details(
-        self, blog_id: str, user_id: UUID | None, session: AsyncSession
+        self, blog_id: str, user_id: UUID | None
     ) -> BlogWithCommentsResponse:
-        blog = await self._fetch_blog_with_relationships(blog_id, session)
+        blog = await self._fetch_blog_with_relationships(blog_id)
         is_liked_by_user = self._check_if_user_liked(blog, user_id)
         sanitized_blog = self._build_sanitized_blog(blog, is_liked_by_user)
         sanitized_comments = self._build_sanitized_comments(blog.comments)
         return BlogWithCommentsResponse(blog=sanitized_blog, comments=sanitized_comments)
 
-    async def _fetch_blog_with_relationships(
-        self, blog_id: str, session: AsyncSession
-    ) -> Blog:
+    async def _fetch_blog_with_relationships(self, blog_id: str) -> Blog:
         try:
-            statement = (
-                select(Blog)
-                .where(Blog.id == blog_id)
-            )
-            result = await session.exec(statement)
-            blog = result.first()
+            blog = await self.blog_repo.get_by_id_with_relationships(blog_id)
             if not blog:
                 raise ResourceNotFoundError("Blog", blog_id)
             return blog
@@ -106,19 +94,16 @@ class BlogService:
         )
 
     def _build_sanitized_comments(self, comments: list[Comment]) -> list[CommentSchema]:
-        sanitized_comments: list[CommentSchema] = []
-        for comment in comments:
-            author = comment.author
-            sanitized_comments.append(
-                CommentSchema(
-                    id=str(comment.id),
-                    content=comment.content,
-                    created_by=UserInfo(
-                        id=str(author.id),
-                        name=author.name,
-                        image_url=build_file_url(author.profile_image_url),
-                    ),
-                    created_at=comment.created_at,
-                )
+        return [
+            CommentSchema(
+                id=str(comment.id),
+                content=comment.content,
+                created_by=UserInfo(
+                    id=str(comment.author.id),
+                    name=comment.author.name,
+                    image_url=build_file_url(comment.author.profile_image_url),
+                ),
+                created_at=comment.created_at,
             )
-        return sanitized_comments
+            for comment in comments
+        ]
