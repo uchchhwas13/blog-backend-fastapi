@@ -6,7 +6,7 @@ from src.schemas.api_response import APIResponse
 from src.schemas.user import LogOutResponse, LoginResponse, LogoutRequestModel, TokenPairResponse, TokenRefreshRequest, UserCreateModel, UserLoginModel, UserModel, UserResponse
 from src.services.auth_service import AuthService
 from fastapi import Depends
-from src.utils import create_access_token, create_refresh_token, validate_file, verify_password, verify_refresh_token
+from src.utils import create_access_token, create_refresh_token, verify_password, verify_refresh_token
 from src.dependencies.dependencies_repositories import UserRepositoryDep
 
 auth_router = APIRouter()
