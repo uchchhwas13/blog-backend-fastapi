@@ -1,11 +1,11 @@
 from typing import Optional, Annotated
 from fastapi import Depends, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from .models.user import User
+from src.models.user import User
 from src.services.auth_service import AuthService
-from .utils import verify_access_token
+from src.utils import verify_access_token
 from fastapi.exceptions import HTTPException
-from src.dependencies_repositories import UserRepositoryDep
+from .dependencies_repositories import UserRepositoryDep
 
 
 class AccessTokenBearer(HTTPBearer):

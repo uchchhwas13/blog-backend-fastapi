@@ -12,28 +12,24 @@ from src.repositories.blog_like_repository import BlogLikeRepository
 def get_user_repository(
     session: Annotated[AsyncSession, Depends(get_session)]
 ) -> UserRepository:
-    """Dependency to get UserRepository instance."""
     return UserRepository(session)
 
 
 def get_blog_repository(
     session: Annotated[AsyncSession, Depends(get_session)]
 ) -> BlogRepository:
-    """Dependency to get BlogRepository instance."""
     return BlogRepository(session)
 
 
 def get_comment_repository(
     session: Annotated[AsyncSession, Depends(get_session)]
 ) -> CommentRepository:
-    """Dependency to get CommentRepository instance."""
     return CommentRepository(session)
 
 
 def get_blog_like_repository(
     session: Annotated[AsyncSession, Depends(get_session)]
 ) -> BlogLikeRepository:
-    """Dependency to get BlogLikeRepository instance."""
     return BlogLikeRepository(session)
 
 
