@@ -114,5 +114,4 @@ def validate_file(file: UploadFile, content: bytes) -> None:
 
 
 def build_file_url(path: str) -> str:
-    base_url = "http://localhost:3000"
-    return f"{base_url}{path}"
+    return f"{config.server_url}{path}"
