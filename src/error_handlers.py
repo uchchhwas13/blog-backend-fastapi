@@ -102,10 +102,15 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
 
 def register_exception_handlers(app: FastAPI) -> None:
 
-    app.add_exception_handler(BlogAPIException, blog_api_exception_handler)
+    app.add_exception_handler(
+        BlogAPIException, blog_api_exception_handler)  # type: ignore[misc]
     app.add_exception_handler(RequestValidationError,
+                              # type: ignore[misc]
                               validation_exception_handler)
+
     app.add_exception_handler(PydanticValidationError,
+                              # type: ignore[misc]
                               validation_exception_handler)
-    app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
+    app.add_exception_handler(
+        SQLAlchemyError, sqlalchemy_exception_handler)  # type: ignore[misc]
     app.add_exception_handler(Exception, generic_exception_handler)
