@@ -3,10 +3,9 @@ from fastapi import Depends, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from .models.user import User
 from src.services.auth_service import AuthService
-from src.db.main import get_session
 from .utils import verify_access_token
 from fastapi.exceptions import HTTPException
-from sqlmodel.ext.asyncio.session import AsyncSession
+from src.dependencies_repositories import UserRepositoryDep
 
 
 class AccessTokenBearer(HTTPBearer):
@@ -27,25 +26,30 @@ class AccessTokenBearer(HTTPBearer):
         return creds
 
 
-async def get_current_user_from_token(token_details: Annotated[HTTPAuthorizationCredentials, Depends(AccessTokenBearer())],
-                                      session: AsyncSession = Depends(get_session)) -> Optional[User]:
+AccessTokenDep = Annotated[HTTPAuthorizationCredentials,
+                           Depends(AccessTokenBearer())]
+
+
+async def get_current_user_from_token(token_details: AccessTokenDep,
+                                      user_repo: UserRepositoryDep
+                                      ) -> Optional[User]:
     user_data = verify_access_token(token_details.credentials)
     if not user_data:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     user_email = user_data.get("user", {}).get("email")
-    user = await AuthService().get_user_by_email(user_email, session)
+    user = await AuthService(user_repo=user_repo).get_user_by_email(user_email)
     return user
 
 
 async def get_optional_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(
-        HTTPBearer(auto_error=False)),
-    session: AsyncSession = Depends(get_session)
+        user_repo: UserRepositoryDep,
+    token_details: Optional[HTTPAuthorizationCredentials] = Depends(
+        HTTPBearer(auto_error=False))
 ) -> Optional[User]:
-    if not credentials:
+    if not token_details:
         return None
 
-    user_data = verify_access_token(credentials.credentials)
+    user_data = verify_access_token(token_details.credentials)
     if not user_data:
         return None
 
@@ -53,5 +57,5 @@ async def get_optional_current_user(
     if not user_email:
         return None
 
-    user = await AuthService().get_user_by_email(user_email, session)
+    user = await AuthService(user_repo=user_repo).get_user_by_email(user_email)
     return user
