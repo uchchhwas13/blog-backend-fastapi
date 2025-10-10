@@ -1,5 +1,4 @@
 from typing import TypedDict
-from fastapi import HTTPException, status
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 import uuid
@@ -7,7 +6,11 @@ import jwt
 from passlib.context import CryptContext
 from .config import config
 from fastapi import UploadFile
-from fastapi import HTTPException
+from src.exceptions import (
+    TokenExpiredError,
+    InvalidTokenError,
+    FileValidationError
+)
 
 password_context = CryptContext(schemes=["bcrypt"])
 ACCESS_TOKEN_EXPIRY_DURATION = 300
@@ -51,7 +54,7 @@ def create_refresh_token(user_data: UserDataDict) -> str:
         "type": "refresh",
         "jti": str(uuid.uuid4())
     }
-    token: str = jwt.encode(
+    token = jwt.encode(
         payload,
         key=config.JWT_REFRESH_TOKEN_SECRET_KEY,
         algorithm=config.JWT_ALGORITHM,
@@ -67,21 +70,12 @@ def verify_access_token(token: str) -> Optional[dict[str, Any]]:
             algorithms=[config.JWT_ALGORITHM]
         )
         if payload.get("type") != "access":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid access token"
-            )
+            raise InvalidTokenError(token_type="access")
         return payload
     except jwt.ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Access token expired"
-        )
+        raise TokenExpiredError(token_type="access")
     except jwt.PyJWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid access token"
-        )
+        raise InvalidTokenError(token_type="access")
 
 
 def verify_refresh_token(token: str) -> Optional[dict[str, Any]]:
@@ -92,21 +86,12 @@ def verify_refresh_token(token: str) -> Optional[dict[str, Any]]:
             algorithms=[config.JWT_ALGORITHM]
         )
         if payload.get("type") != "refresh":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid refresh token"
-            )
+            raise InvalidTokenError(token_type="refresh")
         return payload
     except jwt.ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token expired"
-        )
+        raise TokenExpiredError(token_type="refresh")
     except jwt.PyJWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid refresh token"
-        )
+        raise InvalidTokenError(token_type="refresh")
 
 
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
@@ -119,14 +104,12 @@ def validate_file(file: UploadFile, content: bytes) -> None:
         return
     ext = file.filename.split(".")[-1].lower()
     if ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
+        raise FileValidationError(
+            f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
         )
     if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=400,
-            detail="File too large. Max size allowed is 1MB"
+        raise FileValidationError(
+            "File too large. Max size allowed is 1MB"
         )
 
 
