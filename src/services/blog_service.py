@@ -5,10 +5,9 @@ from src.models.user import User
 from src.models.comment import Comment
 from src.schemas.blog import AddBlogPostPayload, BlogDetail, BlogItem, BlogModel, UserInfo, BlogWithCommentsResponse
 from uuid import UUID
-from fastapi import HTTPException
 from src.schemas.blog import Comment as CommentSchema, UserInfo
-from sqlalchemy.orm import selectinload
 from src.utils import build_file_url
+from src.exceptions import ResourceNotFoundError, DatabaseError
 
 
 class BlogService:
@@ -17,25 +16,28 @@ class BlogService:
                             user: User,
                             session: AsyncSession
                             ) -> BlogModel:
+        try:
+            new_blog = Blog(**payload.model_dump(),
+                            created_by=user.id)
+            session.add(new_blog)
+            await session.commit()
+            await session.refresh(new_blog)
 
-        new_blog = Blog(**payload.model_dump(),
-                        created_by=user.id)
-        session.add(new_blog)
-        await session.commit()
-        await session.refresh(new_blog)
-
-        return BlogModel(
-            id=str(new_blog.id),
-            title=new_blog.title,
-            body=new_blog.body,
-            cover_image_url=build_file_url(new_blog.cover_image_url),
-            created_by=UserInfo(
-                id=str(user.id),
-                name=user.name,
-                image_url=build_file_url(user.profile_image_url)
-            ),
-            created_at=new_blog.created_at,
-        )
+            return BlogModel(
+                id=str(new_blog.id),
+                title=new_blog.title,
+                body=new_blog.body,
+                cover_image_url=build_file_url(new_blog.cover_image_url),
+                created_by=UserInfo(
+                    id=str(user.id),
+                    name=user.name,
+                    image_url=build_file_url(user.profile_image_url)
+                ),
+                created_at=new_blog.created_at,
+            )
+        except Exception:
+            await session.rollback()
+            raise DatabaseError("Failed to create blog post")
 
     async def get_blog_list(self, session: AsyncSession) -> list[BlogItem]:
         statement = select(Blog).order_by(desc(Blog.created_at))
@@ -65,21 +67,20 @@ class BlogService:
     async def _fetch_blog_with_relationships(
         self, blog_id: str, session: AsyncSession
     ) -> Blog:
-        statement = (
-            select(Blog)
-            .where(Blog.id == blog_id)
-            .options(
-                selectinload(Blog.author),  # type: ignore[arg-type]
-                selectinload(Blog.likes),  # type: ignore[arg-type]
-                selectinload(Blog.comments).selectinload(  # type: ignore[arg-type]
-                    Comment.author),  # type: ignore[arg-type]
+        try:
+            statement = (
+                select(Blog)
+                .where(Blog.id == blog_id)
             )
-        )
-        result = await session.exec(statement)
-        blog = result.first()
-        if not blog:
-            raise HTTPException(status_code=404, detail="Blog not found")
-        return blog
+            result = await session.exec(statement)
+            blog = result.first()
+            if not blog:
+                raise ResourceNotFoundError("Blog", blog_id)
+            return blog
+        except ResourceNotFoundError:
+            raise
+        except Exception:
+            raise DatabaseError("Failed to fetch blog details")
 
     def _check_if_user_liked(self, blog: Blog, user_id: UUID | None) -> bool:
         if not user_id:
@@ -88,9 +89,6 @@ class BlogService:
 
     def _build_sanitized_blog(self, blog: Blog, is_liked_by_user: bool) -> BlogDetail:
         author = blog.author
-        if not author:
-            raise HTTPException(
-                status_code=500, detail="Blog author not found")
 
         return BlogDetail(
             id=str(blog.id),
