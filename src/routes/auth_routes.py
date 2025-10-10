@@ -1,6 +1,6 @@
-import time
 from fastapi import UploadFile, Form, APIRouter, HTTPException, status
 from pathlib import Path
+from src.services.file_service import FileService
 from src.exceptions import InvalidCredentialsError, InvalidTokenError
 from src.schemas.api_response import APIResponse
 from src.schemas.user import LogOutResponse, LoginResponse, LogoutRequestModel, TokenPairResponse, TokenRefreshRequest, UserCreateModel, UserLoginModel, UserModel, UserResponse
@@ -21,20 +21,8 @@ async def user_data_with_image(
     profile_image: UploadFile | None = Form(
         None, alias="profileImage"),
 ) -> UserCreateModel:
-    if profile_image:
-        content = await profile_image.read()
-        validate_file(profile_image, content)
 
-        timestamp = int(time.time())
-        file_name = f"{timestamp}-{profile_image.filename}"
-        file_path = UPLOAD_DIR / file_name
-
-        with open(file_path, "wb") as buffer:
-            buffer.write(content)
-
-        image_path = f"/uploads/{file_name}"
-    else:
-        image_path = "/uploads/default.jpg"
+    image_path = await FileService().save_optional_file(file=profile_image)
 
     return UserCreateModel(
         name=fullname,

@@ -1,4 +1,5 @@
 from typing import Annotated, Optional
+from src.services.file_service import FileService
 from src.services.blog_like_service import BlogLikeService
 from src.services.comment_service import CommentService
 from src.schemas.blog import AddBlogPostPayload, BlogLikeResponse, BlogListResponse, BlogResponse, BlogWithCommentsResponse, CommentPayload, CommentResponse, CommentCreateModel, LikePayload
@@ -11,9 +12,7 @@ from src.dependencies.dependencies_repositories import BlogRepositoryDep, Commen
 from src.models.user import User
 from src.schemas.api_response import APIResponse
 from src.schemas.blog import AddBlogPostPayload
-import time
 from pathlib import Path
-from src.utils import validate_file
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -26,17 +25,7 @@ async def blog_data_with_image(
     title: str = Form(...),
     body: str = Form(...)
 ) -> AddBlogPostPayload:
-    content = await cover_image.read()
-    validate_file(cover_image, content)
-
-    timestamp = int(time.time())
-    file_name = f"{timestamp}-{cover_image.filename}"
-    file_path = UPLOAD_DIR / file_name
-
-    with open(file_path, "wb") as buffer:
-        buffer.write(content)
-
-    image_path = f"/uploads/{file_name}"
+    image_path = await FileService().save_uploaded_file(file=cover_image)
     return AddBlogPostPayload(
         title=title,
         body=body,
