@@ -1,22 +1,18 @@
 import time
 from fastapi import UploadFile, Form, APIRouter, HTTPException, status
 from pathlib import Path
-from sqlmodel.ext.asyncio.session import AsyncSession
 from src.exceptions import InvalidCredentialsError
 from src.schemas.api_response import APIResponse
 from src.schemas.user import LogOutResponse, LoginResponse, LogoutRequestModel, TokenPairResponse, TokenRefreshRequest, UserCreateModel, UserLoginModel, UserModel, UserResponse
 from src.services.auth_service import AuthService
-from src.db.main import get_session
 from typing import Annotated
 from fastapi import Depends
 from src.utils import create_access_token, create_refresh_token, validate_file, verify_password, verify_refresh_token
+from src.dependencies_repositories import UserRepositoryDep
 
 auth_router = APIRouter()
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
-
-
-auth_service = AuthService()
 
 
 async def user_data_with_image(
@@ -51,28 +47,28 @@ async def user_data_with_image(
 
 @auth_router.post("/signup", response_model=APIResponse[UserModel], status_code=status.HTTP_201_CREATED)
 async def create_user(
-    session: Annotated[AsyncSession, Depends(get_session)],
+    user_repo: UserRepositoryDep,
     user_data: UserCreateModel = Depends(user_data_with_image),
 ):
-    auth_service = AuthService()
+    auth_service = AuthService(user_repo)
 
-    if await auth_service.user_exists(user_data.email, session):
-        print("user exists")
+    if await auth_service.user_exists(user_data.email):
         raise HTTPException(
             status_code=400,
             detail="User with this email already exists"
         )
 
-    new_user = await auth_service.create_user(user_data, session)
+    new_user = await auth_service.create_user(user_data)
     return APIResponse(data=new_user, message="User created successfully", success=True)
 
 
 @auth_router.post('/signin', response_model=APIResponse[LoginResponse], status_code=status.HTTP_200_OK)
-async def login_user(login_data: UserLoginModel, session: Annotated[AsyncSession, Depends(get_session)]):
+async def login_user(login_data: UserLoginModel, user_repo: UserRepositoryDep):
+    auth_service = AuthService(user_repo)
     email = login_data.email
     password = login_data.password
 
-    user = await auth_service.get_user_by_email(email, session)
+    user = await auth_service.get_user_by_email(email)
 
     if user is not None:
         password_valid = verify_password(password, user.password_hash)
@@ -91,7 +87,7 @@ async def login_user(login_data: UserLoginModel, session: Annotated[AsyncSession
                 }
             )
 
-            await auth_service.save_refresh_token(user, refresh_token, session)
+            await auth_service.save_refresh_token(user, refresh_token)
 
             return APIResponse(data=LoginResponse(
                 access_token=access_token,
@@ -107,7 +103,8 @@ async def login_user(login_data: UserLoginModel, session: Annotated[AsyncSession
 
 
 @auth_router.post('/token/refresh', response_model=APIResponse[TokenPairResponse], status_code=status.HTTP_201_CREATED)
-async def refresh_access_token(request_body: TokenRefreshRequest, session: Annotated[AsyncSession, Depends(get_session)]):
+async def refresh_access_token(request_body: TokenRefreshRequest, user_repo: UserRepositoryDep):
+    auth_service = AuthService(user_repo)
     token_payload = verify_refresh_token(request_body.refresh_token)
     if not token_payload:
         raise HTTPException(
@@ -123,13 +120,14 @@ async def refresh_access_token(request_body: TokenRefreshRequest, session: Annot
         )
 
     tokenResponse = await auth_service.refresh_tokens(
-        request_body.refresh_token, user_id, session
+        request_body.refresh_token, user_id
     )
     return APIResponse(data=tokenResponse, message="Token refreshed successfully", success=True)
 
 
 @auth_router.post('/logout', response_model=LogOutResponse, status_code=status.HTTP_200_OK)
-async def log_out_user(request_model: LogoutRequestModel, session: AsyncSession = Depends(get_session)):
-    await auth_service.remove_refresh_token(request_model.user_id, session)
+async def log_out_user(request_model: LogoutRequestModel, user_repo: UserRepositoryDep):
+    auth_service = AuthService(user_repo)
+    await auth_service.remove_refresh_token(request_model.user_id)
 
     return LogOutResponse(message="Logged out successfully", success=True)
