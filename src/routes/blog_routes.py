@@ -6,8 +6,8 @@ from src.services.blog_service import BlogService
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
-from src.dependencies import get_current_user_from_token, get_optional_current_user
-from src.dependencies_repositories import BlogRepositoryDep, CommentRepositoryDep, BlogLikeRepositoryDep
+from src.dependencies.dependencies_auth import get_current_user_from_token, get_optional_current_user
+from src.dependencies.dependencies_repositories import BlogRepositoryDep, CommentRepositoryDep, BlogLikeRepositoryDep
 from src.models.user import User
 from src.schemas.api_response import APIResponse
 from src.schemas.blog import AddBlogPostPayload

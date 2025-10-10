@@ -1,14 +1,13 @@
 import time
 from fastapi import UploadFile, Form, APIRouter, HTTPException, status
 from pathlib import Path
-from src.exceptions import InvalidCredentialsError
+from src.exceptions import InvalidCredentialsError, InvalidTokenError
 from src.schemas.api_response import APIResponse
 from src.schemas.user import LogOutResponse, LoginResponse, LogoutRequestModel, TokenPairResponse, TokenRefreshRequest, UserCreateModel, UserLoginModel, UserModel, UserResponse
 from src.services.auth_service import AuthService
-from typing import Annotated
 from fastapi import Depends
 from src.utils import create_access_token, create_refresh_token, validate_file, verify_password, verify_refresh_token
-from src.dependencies_repositories import UserRepositoryDep
+from src.dependencies.dependencies_repositories import UserRepositoryDep
 
 auth_router = APIRouter()
 UPLOAD_DIR = Path("uploads")
@@ -107,17 +106,10 @@ async def refresh_access_token(request_body: TokenRefreshRequest, user_repo: Use
     auth_service = AuthService(user_repo)
     token_payload = verify_refresh_token(request_body.refresh_token)
     if not token_payload:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid or expired refresh token"
-        )
-
+        raise InvalidTokenError(token_type="refresh")
     user_id = token_payload.get("user", {}).get("user_id")
     if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid token payload"
-        )
+        raise InvalidTokenError(token_type="refresh")
 
     tokenResponse = await auth_service.refresh_tokens(
         request_body.refresh_token, user_id
