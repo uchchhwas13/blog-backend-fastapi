@@ -2,6 +2,7 @@ import time
 from fastapi import UploadFile, Form, APIRouter, HTTPException, status
 from pathlib import Path
 from sqlmodel.ext.asyncio.session import AsyncSession
+from src.exceptions import InvalidCredentialsError
 from src.schemas.api_response import APIResponse
 from src.schemas.user import LogOutResponse, LoginResponse, LogoutRequestModel, TokenPairResponse, TokenRefreshRequest, UserCreateModel, UserLoginModel, UserModel, UserResponse
 from src.services.auth_service import AuthService
@@ -102,10 +103,7 @@ async def login_user(login_data: UserLoginModel, session: Annotated[AsyncSession
                 )
             ), message="Login successful", success=True)
 
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Invalid Email or Password"
-    )
+    raise InvalidCredentialsError()
 
 
 @auth_router.post('/token/refresh', response_model=APIResponse[TokenPairResponse], status_code=status.HTTP_201_CREATED)
