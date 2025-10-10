@@ -1,5 +1,6 @@
 from datetime import datetime
-from sqlmodel import SQLModel, Field, Column, Relationship
+from .base_model import BaseModel
+from sqlmodel import Field, Column, Relationship
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
 from sqlalchemy import func, UniqueConstraint
 import uuid
@@ -10,7 +11,7 @@ if TYPE_CHECKING:
     from .blog import Blog
 
 
-class BlogLike(SQLModel, table=True):
+class BlogLike(BaseModel, table=True):
     __tablename__ = "blog_likes"  # type: ignore[arg-type]
 
     id: uuid.UUID = Field(

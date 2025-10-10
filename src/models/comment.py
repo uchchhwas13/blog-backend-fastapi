@@ -1,8 +1,10 @@
 from datetime import datetime
-from sqlmodel import SQLModel, Field, Relationship, Column
+from sqlmodel import Field, Relationship, Column
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
 from sqlalchemy import func
 import uuid
+from .base_model import BaseModel
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -10,7 +12,7 @@ if TYPE_CHECKING:
     from .blog import Blog
 
 
-class Comment(SQLModel, table=True):
+class Comment(BaseModel, table=True):
     __tablename__ = "comments"  # type: ignore[arg-type]
 
     id: uuid.UUID = Field(
