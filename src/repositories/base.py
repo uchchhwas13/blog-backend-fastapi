@@ -44,3 +44,12 @@ class BaseRepository(Generic[ModelType]):
         await self.session.commit()
         await self.session.refresh(obj)
         return obj
+
+    async def delete_by_id(self, id: UUID | str) -> bool:
+        obj = await self.get_by_id(id)
+        if not obj:
+            return False
+
+        await self.session.delete(obj)
+        await self.session.commit()
+        return True
