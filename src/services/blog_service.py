@@ -7,11 +7,13 @@ from uuid import UUID
 from src.schemas.blog import Comment as CommentSchema
 from src.utils import build_file_url
 from src.exceptions import AuthorizationError, ResourceNotFoundError, DatabaseError
+from src.services.file_service import FileService
 
 
 class BlogService:
     def __init__(self, blog_repo: BlogRepository):
         self.blog_repo = blog_repo
+        self.file_service = FileService()
 
     async def add_blog_post(
         self,
@@ -50,12 +52,11 @@ class BlogService:
         user: User
     ) -> bool:
         try:
-            await self._validate_blog_ownership(blog_id, user)
-
+            blog = await self._validate_blog_ownership(blog_id, user)
             success = await self.blog_repo.delete_by_id(blog_id)
             if not success:
                 raise ResourceNotFoundError("Blog", blog_id)
-
+            await self.file_service.delete_file_if_exists(blog.cover_image_url)
             return True
         except ResourceNotFoundError:
             raise
@@ -64,12 +65,13 @@ class BlogService:
         except Exception:
             raise DatabaseError("Failed to delete blog post")
 
-    async def _validate_blog_ownership(self, blog_id: str, user: User) -> None:
+    async def _validate_blog_ownership(self, blog_id: str, user: User) -> Blog:
         blog = await self.blog_repo.get_by_id(blog_id)
         if not blog:
             raise ResourceNotFoundError("Blog", blog_id)
         if blog.created_by != user.id:
             raise AuthorizationError()
+        return blog
 
     def _build_update_data(self, payload: UpdateBlogPostPayload) -> dict[str, str]:
         update_data: dict[str, str] = {}

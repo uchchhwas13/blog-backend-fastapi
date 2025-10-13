@@ -32,6 +32,12 @@ class FileService:
             return await self.save_uploaded_file(file)
         return default_path
 
-
-# Singleton instance
-file_service = FileService()
+    async def delete_file_if_exists(self, relative_path: str) -> None:
+        try:
+            # Ensure no leading slash (so the join works properly)
+            clean_path = relative_path.lstrip("/")
+            file_path = Path(clean_path)
+            if file_path.exists():
+                file_path.unlink()
+        except Exception as e:
+            print(f"Warning: failed to delete file {relative_path}: {e}")
