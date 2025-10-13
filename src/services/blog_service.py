@@ -23,19 +23,7 @@ class BlogService:
             new_blog = Blog(**payload.model_dump(), created_by=user.id)
             created_blog = await self.blog_repo.create(new_blog)
 
-            return BlogModel(
-                id=str(created_blog.id),
-                title=created_blog.title,
-                body=created_blog.body,
-                cover_image_url=build_file_url(created_blog.cover_image_url),
-                created_by=UserInfo(
-                    id=str(user.id),
-                    name=user.name,
-                    image_url=build_file_url(user.profile_image_url)
-                ),
-                created_at=created_blog.created_at,
-                updated_at=created_blog.updated_at
-            )
+            return self._build_blog_model(created_blog, user)
         except Exception:
             raise DatabaseError("Failed to create blog post")
 
@@ -46,43 +34,54 @@ class BlogService:
         user: User
     ) -> BlogModel:
         try:
-            existing_blog = await self.blog_repo.get_by_id(blog_id)
-            if not existing_blog:
-                raise ResourceNotFoundError("Blog", blog_id)
-
-            if existing_blog.created_by != user.id:
-                raise AuthorizationError()
-
-            update_data: dict[str, Any] = {}
-            if payload.title is not None:
-                update_data["title"] = payload.title
-            if payload.body is not None:
-                update_data["body"] = payload.body
-            if payload.cover_image_url is not None:
-                update_data["cover_image_url"] = payload.cover_image_url
-
-            updated_blog = await self.blog_repo.update_by_id(blog_id, update_data)
-
-            if not updated_blog:
-                raise ResourceNotFoundError("Blog", blog_id)
-
-            return BlogModel(
-                id=str(updated_blog.id),
-                title=updated_blog.title,
-                body=updated_blog.body,
-                cover_image_url=build_file_url(updated_blog.cover_image_url),
-                created_by=UserInfo(
-                    id=str(user.id),
-                    name=user.name,
-                    image_url=build_file_url(user.profile_image_url)
-                ),
-                created_at=updated_blog.created_at,
-                updated_at=updated_blog.updated_at
-            )
+            await self._validate_blog_ownership(blog_id, user)
+            update_data = self._build_update_data(payload)
+            updated_blog = await self._update_blog_record(blog_id, update_data)
+            return self._build_blog_model(updated_blog, user)
         except ResourceNotFoundError:
+            raise
+        except AuthorizationError:
             raise
         except Exception:
             raise DatabaseError("Failed to update blog post")
+
+    async def _validate_blog_ownership(self, blog_id: str, user: User) -> None:
+        blog = await self.blog_repo.get_by_id(blog_id)
+        if not blog:
+            raise ResourceNotFoundError("Blog", blog_id)
+        if blog.created_by != user.id:
+            raise AuthorizationError()
+
+    def _build_update_data(self, payload: UpdateBlogPostPayload) -> dict[str, str]:
+        update_data: dict[str, str] = {}
+        if payload.title is not None:
+            update_data["title"] = payload.title
+        if payload.body is not None:
+            update_data["body"] = payload.body
+        if payload.cover_image_url is not None:
+            update_data["cover_image_url"] = payload.cover_image_url
+        return update_data
+
+    async def _update_blog_record(self, blog_id: str, update_data: dict[str, str]):
+        updated_blog = await self.blog_repo.update_by_id(blog_id, update_data)
+        if not updated_blog:
+            raise ResourceNotFoundError("Blog", blog_id)
+        return updated_blog
+
+    def _build_blog_model(self, blog: Blog, user: User) -> BlogModel:
+        return BlogModel(
+            id=str(blog.id),
+            title=blog.title,
+            body=blog.body,
+            cover_image_url=build_file_url(blog.cover_image_url),
+            created_by=UserInfo(
+                id=str(user.id),
+                name=user.name,
+                image_url=build_file_url(user.profile_image_url)
+            ),
+            created_at=blog.created_at,
+            updated_at=blog.updated_at
+        )
 
     async def get_blog_list(self) -> list[BlogItem]:
         blogs = await self.blog_repo.get_all_ordered_by_date()
