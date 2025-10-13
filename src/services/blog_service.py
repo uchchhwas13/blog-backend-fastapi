@@ -1,4 +1,3 @@
-from typing import Any
 from src.repositories.blog_repository import BlogRepository
 from src.models.blog import Blog
 from src.models.user import User
