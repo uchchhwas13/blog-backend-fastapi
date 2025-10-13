@@ -53,7 +53,8 @@ class Blog(BaseModel, table=True):
     )
 
     # Relationships
-    author: "User" = Relationship(back_populates="blogs")
+    author: "User" = Relationship(
+        back_populates="blogs", sa_relationship_kwargs={"lazy": "selectin"})
     likes: list["BlogLike"] = Relationship(
         back_populates="blog", sa_relationship_kwargs={"lazy": "selectin"})
     comments: list["Comment"] = Relationship(
