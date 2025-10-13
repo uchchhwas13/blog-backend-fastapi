@@ -11,8 +11,6 @@ class Settings(BaseSettings):
     SERVER_HOST: str = ""
     SERVER_PORT: int = 3000
 
-    BASE_URL: str | None = None
-
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"
@@ -20,9 +18,7 @@ class Settings(BaseSettings):
 
     @property
     def server_url(self) -> str:
-        """Construct the full server URL."""
-        if self.BASE_URL:
-            return self.BASE_URL
+
         return f"http://{self.SERVER_HOST}:{self.SERVER_PORT}"
 
 
