@@ -18,6 +18,7 @@ UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 blog_router = APIRouter()
+file_service = FileService()
 
 
 async def blog_data_with_image(
@@ -25,7 +26,7 @@ async def blog_data_with_image(
     title: str = Form(...),
     body: str = Form(...)
 ) -> AddBlogPostPayload:
-    image_path = await FileService().save_uploaded_file(file=cover_image)
+    image_path = await file_service.save_uploaded_file(file=cover_image)
     return AddBlogPostPayload(
         title=title,
         body=body,
@@ -42,7 +43,7 @@ async def update_blog_data(
 ) -> UpdateBlogPostPayload:
     image_path = None
     if cover_image and cover_image.filename:
-        image_path = await FileService().save_uploaded_file(file=cover_image)
+        image_path = await file_service.save_uploaded_file(file=cover_image)
     return UpdateBlogPostPayload(
         title=title,
         body=body,
