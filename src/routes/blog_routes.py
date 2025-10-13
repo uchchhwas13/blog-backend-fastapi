@@ -7,10 +7,10 @@ from src.services.blog_service import BlogService
 from fastapi import APIRouter, Depends, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
-from src.dependencies.dependencies_auth import CurrentUserDep, OptionalCurrentUserDep
-from src.dependencies.dependencies_repositories import BlogRepositoryDep, CommentRepositoryDep, BlogLikeRepositoryDep
+from src.dependencies.auth_deps import CurrentUserDep, OptionalCurrentUserDep
+from src.dependencies.repositories_deps import BlogRepositoryDep, CommentRepositoryDep, BlogLikeRepositoryDep
 from src.schemas.api_response import APIResponse
-from src.dependencies.dependencies_blog import BlogDataDep, UpdateBlogDataDep
+from src.dependencies.blog_deps import BlogDataDep, UpdateBlogDataDep
 from pathlib import Path
 
 UPLOAD_DIR = Path("uploads")

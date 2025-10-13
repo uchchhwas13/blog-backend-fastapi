@@ -7,7 +7,7 @@ from src.schemas.user import LogOutResponse, LoginResponse, LogoutRequestModel, 
 from src.services.auth_service import AuthService
 from fastapi import Depends
 from src.utils import create_access_token, create_refresh_token, verify_password, verify_refresh_token
-from src.dependencies.dependencies_repositories import UserRepositoryDep
+from src.dependencies.repositories_deps import UserRepositoryDep
 
 auth_router = APIRouter()
 UPLOAD_DIR = Path("uploads")

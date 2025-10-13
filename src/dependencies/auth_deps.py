@@ -5,7 +5,7 @@ from src.models.user import User
 from src.services.auth_service import AuthService
 from src.utils import verify_access_token
 from fastapi.exceptions import HTTPException
-from .dependencies_repositories import UserRepositoryDep
+from .repositories_deps import UserRepositoryDep
 
 
 class AccessTokenBearer(HTTPBearer):
