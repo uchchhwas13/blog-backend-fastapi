@@ -27,6 +27,8 @@ async def update_blog_data(
     title: str | None = Form(None),
     body: str | None = Form(None)
 ) -> UpdateBlogPostPayload:
+    title = title.strip() if title and title.strip() else None
+    body = body.strip() if body and body.strip() else None
     if not any([
         cover_image and cover_image.filename,
         title,
