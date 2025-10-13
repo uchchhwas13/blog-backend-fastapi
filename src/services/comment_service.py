@@ -1,4 +1,3 @@
-from uuid import UUID
 from src.repositories.comment_repository import CommentRepository
 from src.models.comment import Comment as CommentModel
 from src.models.user import User
@@ -31,7 +30,7 @@ class CommentService:
         new_content: str,
         user: User
     ) -> CommentResponse:
-        comment = await self.comment_repo.get_by_id(UUID(comment_id))
+        comment = await self.comment_repo.get_by_id(comment_id)
 
         if comment is None:
             raise ResourceNotFoundError("Comment", comment_id)
