@@ -44,6 +44,26 @@ class BlogService:
         except Exception:
             raise DatabaseError("Failed to update blog post")
 
+    async def delete_blog_post(
+        self,
+        blog_id: str,
+        user: User
+    ) -> bool:
+        try:
+            await self._validate_blog_ownership(blog_id, user)
+
+            success = await self.blog_repo.delete_by_id(blog_id)
+            if not success:
+                raise ResourceNotFoundError("Blog", blog_id)
+
+            return True
+        except ResourceNotFoundError:
+            raise
+        except AuthorizationError:
+            raise
+        except Exception:
+            raise DatabaseError("Failed to delete blog post")
+
     async def _validate_blog_ownership(self, blog_id: str, user: User) -> None:
         blog = await self.blog_repo.get_by_id(blog_id)
         if not blog:

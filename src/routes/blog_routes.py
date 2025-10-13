@@ -48,6 +48,21 @@ async def update_blog_post(
     return APIResponse(data=BlogResponse(blog=data), success=True, message="Blog post updated successfully")
 
 
+@blog_router.delete('/{blog_id}', status_code=status.HTTP_200_OK)
+async def delete_blog_post(
+    blog_id: str,
+    blog_repo: BlogRepositoryDep,
+    current_user: CurrentUserDep,
+):
+    if not current_user:
+        raise AuthenticationError()
+
+    blog_service = BlogService(blog_repo)
+    await blog_service.delete_blog_post(blog_id, current_user)
+
+    return APIResponse(data={}, success=True, message="Blog post deleted successfully")
+
+
 @blog_router.get('', response_model=APIResponse[BlogListResponse], status_code=status.HTTP_200_OK)
 async def get_blog_list(blog_repo: BlogRepositoryDep):
     blog_service = BlogService(blog_repo)
