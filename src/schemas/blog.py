@@ -9,6 +9,12 @@ class AddBlogPostPayload(CamelModel):
     cover_image_url: str
 
 
+class UpdateBlogPostPayload(CamelModel):
+    title: str | None = None
+    body: str | None = None
+    cover_image_url: str | None = None
+
+
 class UserInfo(CamelModel):
     id: str
     name: str
@@ -22,6 +28,7 @@ class BlogModel(CamelModel):
     cover_image_url: str
     created_by: UserInfo
     created_at: datetime
+    updated_at: datetime
 
 
 class BlogResponse(CamelModel):
