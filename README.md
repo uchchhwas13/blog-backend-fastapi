@@ -21,8 +21,6 @@ DATABASE_URL=postgresql://user:password@localhost:5432/blogdb
 JWT_ACCESS_TOKEN_SECRET_KEY=your-access-token-secret
 JWT_REFRESH_TOKEN_SECRET_KEY=your-refresh-token-secret
 JWT_ALGORITHM=HS256
-REDIS_HOST=localhost
-REDIS_PORT=6379
 SERVER_HOST=localhost
 SERVER_PORT=3000
 ```
@@ -80,8 +78,6 @@ All configuration is managed through environment variables in `.env`:
 | `JWT_ACCESS_TOKEN_SECRET_KEY`  | Access token secret              | Required                      |
 | `JWT_REFRESH_TOKEN_SECRET_KEY` | Refresh token secret             | Required                      |
 | `JWT_ALGORITHM`                | JWT algorithm                    | `HS256`                       |
-| `REDIS_HOST`                   | Redis host                       | `localhost`                   |
-| `REDIS_PORT`                   | Redis port                       | `6379`                        |
 
 ### Production Deployment
 
