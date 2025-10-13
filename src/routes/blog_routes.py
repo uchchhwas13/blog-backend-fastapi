@@ -1,10 +1,11 @@
 from typing import Annotated
+from src.exceptions import AuthenticationError
 from src.services.file_service import FileService
 from src.services.blog_like_service import BlogLikeService
 from src.services.comment_service import CommentService
-from src.schemas.blog import AddBlogPostPayload, BlogLikeResponse, BlogListResponse, BlogResponse, BlogWithCommentsResponse, CommentPayload, CommentResponse, CommentCreateModel, LikePayload
+from src.schemas.blog import AddBlogPostPayload, UpdateBlogPostPayload, BlogLikeResponse, BlogListResponse, BlogResponse, BlogWithCommentsResponse, CommentPayload, CommentResponse, CommentCreateModel, LikePayload
 from src.services.blog_service import BlogService
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form, status
+from fastapi import APIRouter, Depends, UploadFile, Form, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
 from src.dependencies.dependencies_auth import CurrentUserDep, OptionalCurrentUserDep
@@ -34,6 +35,23 @@ async def blog_data_with_image(
 BlogDataDep = Annotated[AddBlogPostPayload, Depends(blog_data_with_image)]
 
 
+async def update_blog_data(
+    cover_image: UploadFile | None = Form(None, alias="coverImage"),
+    title: str | None = Form(None),
+    body: str | None = Form(None)
+) -> UpdateBlogPostPayload:
+    image_path = None
+    if cover_image and cover_image.filename:
+        image_path = await FileService().save_uploaded_file(file=cover_image)
+    return UpdateBlogPostPayload(
+        title=title,
+        body=body,
+        cover_image_url=image_path
+    )
+
+UpdateBlogDataDep = Annotated[UpdateBlogPostPayload, Depends(update_blog_data)]
+
+
 @blog_router.post('', response_model=APIResponse[BlogResponse], status_code=status.HTTP_201_CREATED)
 async def add_blog_post(
     blog_repo: BlogRepositoryDep,
@@ -41,12 +59,26 @@ async def add_blog_post(
     current_user: CurrentUserDep,
 ):
     if not current_user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
+        raise AuthenticationError()
     blog_service = BlogService(blog_repo)
     data = await blog_service.add_blog_post(blog_data, current_user)
 
     return APIResponse(data=BlogResponse(blog=data), success=True, message="Blog post created successfully")
+
+
+@blog_router.patch('/{blog_id}', response_model=APIResponse[BlogResponse], status_code=status.HTTP_200_OK)
+async def update_blog_post(
+    blog_id: str,
+    blog_repo: BlogRepositoryDep,
+    blog_data: UpdateBlogDataDep,
+    current_user: CurrentUserDep,
+):
+    if not current_user:
+        raise AuthenticationError()
+    blog_service = BlogService(blog_repo)
+    data = await blog_service.update_blog_post(blog_id, blog_data, current_user)
+
+    return APIResponse(data=BlogResponse(blog=data), success=True, message="Blog post updated successfully")
 
 
 @blog_router.get('', response_model=APIResponse[BlogListResponse], status_code=status.HTTP_200_OK)
