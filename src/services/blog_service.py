@@ -1,12 +1,13 @@
+from typing import Any
 from src.repositories.blog_repository import BlogRepository
 from src.models.blog import Blog
 from src.models.user import User
 from src.models.comment import Comment
-from src.schemas.blog import AddBlogPostPayload, BlogDetail, BlogItem, BlogModel, UserInfo, BlogWithCommentsResponse
+from src.schemas.blog import AddBlogPostPayload, UpdateBlogPostPayload, BlogDetail, BlogItem, BlogModel, UserInfo, BlogWithCommentsResponse
 from uuid import UUID
 from src.schemas.blog import Comment as CommentSchema
 from src.utils import build_file_url
-from src.exceptions import ResourceNotFoundError, DatabaseError
+from src.exceptions import AuthorizationError, ResourceNotFoundError, DatabaseError
 
 
 class BlogService:
@@ -33,13 +34,59 @@ class BlogService:
                     image_url=build_file_url(user.profile_image_url)
                 ),
                 created_at=created_blog.created_at,
+                updated_at=created_blog.updated_at
             )
         except Exception:
             raise DatabaseError("Failed to create blog post")
 
+    async def update_blog_post(
+        self,
+        blog_id: str,
+        payload: UpdateBlogPostPayload,
+        user: User
+    ) -> BlogModel:
+        try:
+            existing_blog = await self.blog_repo.get_by_id(blog_id)
+            if not existing_blog:
+                raise ResourceNotFoundError("Blog", blog_id)
+
+            if existing_blog.created_by != user.id:
+                raise AuthorizationError()
+
+            update_data: dict[str, Any] = {}
+            if payload.title is not None:
+                update_data["title"] = payload.title
+            if payload.body is not None:
+                update_data["body"] = payload.body
+            if payload.cover_image_url is not None:
+                update_data["cover_image_url"] = payload.cover_image_url
+
+            updated_blog = await self.blog_repo.update_by_id(blog_id, update_data)
+
+            if not updated_blog:
+                raise ResourceNotFoundError("Blog", blog_id)
+
+            return BlogModel(
+                id=str(updated_blog.id),
+                title=updated_blog.title,
+                body=updated_blog.body,
+                cover_image_url=build_file_url(updated_blog.cover_image_url),
+                created_by=UserInfo(
+                    id=str(user.id),
+                    name=user.name,
+                    image_url=build_file_url(user.profile_image_url)
+                ),
+                created_at=updated_blog.created_at,
+                updated_at=updated_blog.updated_at
+            )
+        except ResourceNotFoundError:
+            raise
+        except Exception:
+            raise DatabaseError("Failed to update blog post")
+
     async def get_blog_list(self) -> list[BlogItem]:
         blogs = await self.blog_repo.get_all_ordered_by_date()
-        
+
         return [
             BlogItem(
                 id=blog.id,
