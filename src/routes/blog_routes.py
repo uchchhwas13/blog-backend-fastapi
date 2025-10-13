@@ -1,5 +1,5 @@
 from typing import Annotated
-from src.exceptions import AuthenticationError
+from src.exceptions import AuthenticationError, ValidationError
 from src.services.file_service import FileService
 from src.services.blog_like_service import BlogLikeService
 from src.services.comment_service import CommentService
@@ -41,6 +41,14 @@ async def update_blog_data(
     title: str | None = Form(None),
     body: str | None = Form(None)
 ) -> UpdateBlogPostPayload:
+    if not any([
+        cover_image and cover_image.filename,
+        title,
+        body
+    ]):
+        raise ValidationError(
+            "At least one field (coverImage, title, or body) must be provided.")
+
     image_path = None
     if cover_image and cover_image.filename:
         image_path = await file_service.save_uploaded_file(file=cover_image)
