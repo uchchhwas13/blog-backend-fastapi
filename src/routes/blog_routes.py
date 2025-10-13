@@ -33,7 +33,7 @@ async def blog_data_with_image(
     )
 
 
-@blog_router.post("/", response_model=APIResponse[BlogResponse], status_code=status.HTTP_201_CREATED)
+@blog_router.post('', response_model=APIResponse[BlogResponse], status_code=status.HTTP_201_CREATED)
 async def add_blog_post(
     blog_repo: BlogRepositoryDep,
     blog_data: AddBlogPostPayload = Depends(blog_data_with_image),
@@ -48,7 +48,7 @@ async def add_blog_post(
     return APIResponse(data=BlogResponse(blog=data), success=True, message="Blog post created successfully")
 
 
-@blog_router.get('/', response_model=APIResponse[BlogListResponse], status_code=status.HTTP_200_OK)
+@blog_router.get('', response_model=APIResponse[BlogListResponse], status_code=status.HTTP_200_OK)
 async def get_blog_list(blog_repo: BlogRepositoryDep):
     blog_service = BlogService(blog_repo)
     blog_list = await blog_service.get_blog_list()
