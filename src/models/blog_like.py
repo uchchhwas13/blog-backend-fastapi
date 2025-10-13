@@ -2,7 +2,7 @@ from datetime import datetime
 from .base_model import BaseModel
 from sqlmodel import Field, Column, Relationship
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
-from sqlalchemy import func, UniqueConstraint
+from sqlalchemy import func, UniqueConstraint, ForeignKey
 import uuid
 from typing import TYPE_CHECKING
 
@@ -20,8 +20,11 @@ class BlogLike(BaseModel, table=True):
     )
 
     blog_id: uuid.UUID = Field(
-        foreign_key="blogs.id",
-        nullable=False
+        sa_column=Column(
+            UUID(as_uuid=True),
+            ForeignKey("blogs.id", ondelete="CASCADE"),
+            nullable=False
+        )
     )
     user_id: uuid.UUID = Field(
         foreign_key="users.id",

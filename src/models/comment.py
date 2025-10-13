@@ -1,7 +1,7 @@
 from datetime import datetime
 from sqlmodel import Field, Relationship, Column
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
-from sqlalchemy import func
+from sqlalchemy import func, ForeignKey
 import uuid
 from .base_model import BaseModel
 
@@ -31,8 +31,11 @@ class Comment(BaseModel, table=True):
         nullable=False
     )
     blog_id: uuid.UUID = Field(
-        foreign_key="blogs.id",
-        nullable=False
+        sa_column=Column(
+            UUID(as_uuid=True),
+            ForeignKey("blogs.id", ondelete="CASCADE"),
+            nullable=False
+        )
     )
 
     created_at: datetime = Field(
