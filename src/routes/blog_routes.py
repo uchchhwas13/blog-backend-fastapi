@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 from src.services.file_service import FileService
 from src.services.blog_like_service import BlogLikeService
 from src.services.comment_service import CommentService
@@ -7,9 +7,8 @@ from src.services.blog_service import BlogService
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
-from src.dependencies.dependencies_auth import get_current_user_from_token, get_optional_current_user
+from src.dependencies.dependencies_auth import CurrentUserDep, OptionalCurrentUserDep
 from src.dependencies.dependencies_repositories import BlogRepositoryDep, CommentRepositoryDep, BlogLikeRepositoryDep
-from src.models.user import User
 from src.schemas.api_response import APIResponse
 from src.schemas.blog import AddBlogPostPayload
 from pathlib import Path
@@ -32,12 +31,14 @@ async def blog_data_with_image(
         cover_image_url=image_path
     )
 
+BlogDataDep = Annotated[AddBlogPostPayload, Depends(blog_data_with_image)]
+
 
 @blog_router.post('', response_model=APIResponse[BlogResponse], status_code=status.HTTP_201_CREATED)
 async def add_blog_post(
     blog_repo: BlogRepositoryDep,
-    blog_data: AddBlogPostPayload = Depends(blog_data_with_image),
-    current_user: User = Depends(get_current_user_from_token),
+    blog_data: BlogDataDep,
+    current_user: CurrentUserDep,
 ):
     if not current_user:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -59,7 +60,7 @@ async def get_blog_list(blog_repo: BlogRepositoryDep):
 async def get_blog_details(
     blog_id: str,
     blog_repo: BlogRepositoryDep,
-    current_user: Optional[User] = Depends(get_optional_current_user)
+    current_user: OptionalCurrentUserDep
 ):
     blog_service = BlogService(blog_repo)
     user_id = current_user.id if current_user else None
@@ -73,7 +74,7 @@ async def add_comment(
     blog_id: str,
     comment_data: CommentPayload,
     comment_repo: CommentRepositoryDep,
-    current_user: User = Depends(get_current_user_from_token)
+    current_user: CurrentUserDep
 ):
     comment_service = CommentService(comment_repo)
     model = CommentCreateModel(
@@ -89,7 +90,7 @@ async def update_comment(
     comment_id: str,
     comment_data: CommentPayload,
     comment_repo: CommentRepositoryDep,
-    current_user: User = Depends(get_current_user_from_token)
+    current_user: CurrentUserDep
 ):
     comment_service = CommentService(comment_repo)
     comment = await comment_service.update_comment(comment_id, comment_data.content, current_user)
@@ -104,7 +105,7 @@ async def like_unlike_blog(
     session: Annotated[AsyncSession, Depends(get_session)],
     blog_repo: BlogRepositoryDep,
     blog_like_repo: BlogLikeRepositoryDep,
-    current_user: User = Depends(get_current_user_from_token)
+    current_user: CurrentUserDep
 ):
     blog_like_service = BlogLikeService(blog_repo, blog_like_repo)
     result = await blog_like_service.update_like_status(blog_id, current_user.id, payload.is_liked, session)

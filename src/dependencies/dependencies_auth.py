@@ -40,6 +40,8 @@ async def get_current_user_from_token(token_details: AccessTokenDep,
     user = await AuthService(user_repo=user_repo).get_user_by_email(user_email)
     return user
 
+CurrentUserDep = Annotated[User, Depends(get_current_user_from_token)]
+
 
 async def get_optional_current_user(
         user_repo: UserRepositoryDep,
@@ -59,3 +61,6 @@ async def get_optional_current_user(
 
     user = await AuthService(user_repo=user_repo).get_user_by_email(user_email)
     return user
+
+OptionalCurrentUserDep = Annotated[Optional[User], Depends(
+    get_optional_current_user)]
