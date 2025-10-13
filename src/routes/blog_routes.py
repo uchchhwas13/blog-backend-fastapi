@@ -1,64 +1,22 @@
 from typing import Annotated
-from src.exceptions import AuthenticationError, ValidationError
-from src.services.file_service import FileService
+from src.exceptions import AuthenticationError
 from src.services.blog_like_service import BlogLikeService
 from src.services.comment_service import CommentService
-from src.schemas.blog import AddBlogPostPayload, UpdateBlogPostPayload, BlogLikeResponse, BlogListResponse, BlogResponse, BlogWithCommentsResponse, CommentPayload, CommentResponse, CommentCreateModel, LikePayload
+from src.schemas.blog import BlogLikeResponse, BlogListResponse, BlogResponse, BlogWithCommentsResponse, CommentPayload, CommentResponse, CommentCreateModel, LikePayload
 from src.services.blog_service import BlogService
-from fastapi import APIRouter, Depends, UploadFile, Form, status
+from fastapi import APIRouter, Depends, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
 from src.dependencies.dependencies_auth import CurrentUserDep, OptionalCurrentUserDep
 from src.dependencies.dependencies_repositories import BlogRepositoryDep, CommentRepositoryDep, BlogLikeRepositoryDep
 from src.schemas.api_response import APIResponse
-from src.schemas.blog import AddBlogPostPayload
+from src.dependencies.dependencies_blog import BlogDataDep, UpdateBlogDataDep
 from pathlib import Path
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 blog_router = APIRouter()
-file_service = FileService()
-
-
-async def blog_data_with_image(
-    cover_image: UploadFile = Form(..., alias="coverImage"),
-    title: str = Form(...),
-    body: str = Form(...)
-) -> AddBlogPostPayload:
-    image_path = await file_service.save_uploaded_file(file=cover_image)
-    return AddBlogPostPayload(
-        title=title,
-        body=body,
-        cover_image_url=image_path
-    )
-
-BlogDataDep = Annotated[AddBlogPostPayload, Depends(blog_data_with_image)]
-
-
-async def update_blog_data(
-    cover_image: UploadFile | None = Form(None, alias="coverImage"),
-    title: str | None = Form(None),
-    body: str | None = Form(None)
-) -> UpdateBlogPostPayload:
-    if not any([
-        cover_image and cover_image.filename,
-        title,
-        body
-    ]):
-        raise ValidationError(
-            "At least one field (coverImage, title, or body) must be provided.")
-
-    image_path = None
-    if cover_image and cover_image.filename:
-        image_path = await file_service.save_uploaded_file(file=cover_image)
-    return UpdateBlogPostPayload(
-        title=title,
-        body=body,
-        cover_image_url=image_path
-    )
-
-UpdateBlogDataDep = Annotated[UpdateBlogPostPayload, Depends(update_blog_data)]
 
 
 @blog_router.post('', response_model=APIResponse[BlogResponse], status_code=status.HTTP_201_CREATED)
