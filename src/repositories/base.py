@@ -1,16 +1,14 @@
-from typing import Generic, TypeVar, Type, Optional
+from typing import Any, Generic, TypeVar, Type, Optional
 from uuid import UUID
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.models.base_model import BaseModel
 
-# Type variable for the model
 ModelType = TypeVar("ModelType", bound=BaseModel)
 
 
 class BaseRepository(Generic[ModelType]):
-    """Base repository class with common CRUD operations."""
 
     def __init__(self, model: Type[ModelType], session: AsyncSession):
         self.model = model
@@ -28,6 +26,20 @@ class BaseRepository(Generic[ModelType]):
         return result.first()
 
     async def update(self, obj: ModelType) -> ModelType:
+        self.session.add(obj)
+        await self.session.commit()
+        await self.session.refresh(obj)
+        return obj
+
+    async def update_by_id(self, id: UUID | str, update_data: dict[str, Any]) -> Optional[ModelType]:
+        obj = await self.get_by_id(id)
+        if not obj:
+            return None
+
+        for key, value in update_data.items():
+            if hasattr(obj, key):
+                setattr(obj, key, value)
+
         self.session.add(obj)
         await self.session.commit()
         await self.session.refresh(obj)

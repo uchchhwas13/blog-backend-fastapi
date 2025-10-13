@@ -1,7 +1,3 @@
-"""
-Blog repository for blog-specific database operations.
-"""
-
 from typing import Optional
 from sqlmodel import select, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
