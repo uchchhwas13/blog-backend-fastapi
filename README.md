@@ -127,6 +127,127 @@ Once the server is running, visit:
 - Swagger UI: `http://localhost:3000/docs`
 - ReDoc: `http://localhost:3000/redoc`
 
+## API Endpoints
+
+### Authentication
+- `POST /auth/register` - User registration
+- `POST /auth/login` - User login
+- `POST /auth/refresh` - Refresh access token
+- `POST /auth/logout` - User logout
+
+### Blog Management
+- `POST /blogs` - Create a new blog post
+- `GET /blogs` - Get all blog posts (public)
+- `GET /blogs/{blog_id}` - Get blog details with comments
+- `PATCH /blogs/{blog_id}` - Update a blog post (author only)
+- `DELETE /blogs/{blog_id}` - Delete a blog post (author only)
+
+### Blog Interactions
+- `POST /blogs/{blog_id}/comments` - Add a comment to a blog
+- `PUT /blogs/{blog_id}/comments/{comment_id}` - Update a comment (author only)
+- `POST /blogs/{blog_id}/likes` - Like/unlike a blog
+- `GET /blogs/{blog_id}/likes` - Get blog likes count and users
+
+### Request/Response Examples
+
+#### Create Blog Post
+```bash
+POST /blogs
+Content-Type: multipart/form-data
+
+{
+  "title": "My Blog Post",
+  "body": "This is the content of my blog post...",
+  "coverImage": [file]
+}
+```
+
+#### Update Blog Post
+```bash
+PATCH /blogs/{blog_id}
+Content-Type: application/json
+
+{
+  "title": "Updated Title",
+  "body": "Updated content...",
+  "coverImageUrl": "new-image.jpg"
+}
+```
+
+#### Delete Blog Post
+```bash
+DELETE /blogs/{blog_id}
+Authorization: Bearer <access_token>
+```
+
+#### Add Comment
+```bash
+POST /blogs/{blog_id}/comments
+Content-Type: application/json
+Authorization: Bearer <access_token>
+
+{
+  "content": "Great blog post!"
+}
+```
+
+#### Like/Unlike Blog
+```bash
+POST /blogs/{blog_id}/likes
+Content-Type: application/json
+Authorization: Bearer <access_token>
+
+{
+  "isLiked": true
+}
+```
+
+## Features
+
+### Blog Management
+- ✅ **Create Blog Posts** - Upload cover images and create rich blog content
+- ✅ **Update Blog Posts** - Partial updates (title, body, cover image)
+- ✅ **Delete Blog Posts** - Secure deletion with cascade cleanup
+- ✅ **View Blog Lists** - Public access to all blog posts
+- ✅ **Blog Details** - Full blog content with comments and likes
+
+### User Interactions
+- ✅ **Comments System** - Users can comment on blog posts
+- ✅ **Like System** - Users can like/unlike blog posts
+- ✅ **User Authentication** - JWT-based authentication
+- ✅ **Authorization** - Role-based access control
+
+### Security Features
+- 🔒 **Authentication Required** - Protected endpoints require valid JWT tokens
+- 🔒 **Authorization Checks** - Users can only modify their own content
+- 🔒 **Input Validation** - Comprehensive request validation
+- 🔒 **Error Handling** - Secure error responses without sensitive data exposure
+- 🔒 **CASCADE DELETE** - Automatic cleanup of related data when blogs are deleted
+
+### Data Management
+- 📊 **Database Migrations** - Alembic-based schema management
+- 📊 **File Uploads** - Secure image upload handling
+- 📊 **Relationship Management** - Proper foreign key constraints
+- 📊 **Transaction Safety** - ACID-compliant database operations
+
 ## Development
 
 The server runs with auto-reload enabled by default, so changes to your code will automatically restart the server.
+
+### Adding New Features
+
+1. **Models**: Add new SQLModel classes in `src/models/`
+2. **Schemas**: Define Pydantic schemas in `src/schemas/`
+3. **Services**: Implement business logic in `src/services/`
+4. **Routes**: Create API endpoints in `src/routes/`
+5. **Migrations**: Generate and run database migrations with `make migrate`
+
+### Database Migrations
+
+```bash
+# Generate new migration
+make migrate msg="Add new feature"
+
+# Apply migrations
+make upgrade
+```
