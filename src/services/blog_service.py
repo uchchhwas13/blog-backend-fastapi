@@ -5,7 +5,6 @@ from src.models.comment import Comment
 from src.schemas.blog import AddBlogPostPayload, UpdateBlogPostPayload, BlogDetail, BlogItem, BlogModel, UserInfo, BlogWithCommentsResponse
 from uuid import UUID
 from src.schemas.blog import Comment as CommentSchema
-from src.utils import build_file_url
 from src.exceptions import AuthorizationError, ResourceNotFoundError, DatabaseError
 from src.services.file_service import FileService
 
@@ -97,11 +96,13 @@ class BlogService:
             id=str(blog.id),
             title=blog.title,
             body=blog.body,
-            cover_image_url=build_file_url(blog.cover_image_url),
+            cover_image_url=self.file_service.build_file_url(
+                blog.cover_image_url),
             created_by=UserInfo(
                 id=str(user.id),
                 name=user.name,
-                image_url=build_file_url(user.profile_image_url)
+                image_url=self.file_service.build_file_url(
+                    user.profile_image_url)
             ),
             created_at=blog.created_at,
             updated_at=blog.updated_at
@@ -114,7 +115,8 @@ class BlogService:
             BlogItem(
                 id=blog.id,
                 title=blog.title,
-                cover_image_url=build_file_url(blog.cover_image_url),
+                cover_image_url=self.file_service.build_file_url(
+                    blog.cover_image_url),
                 created_at=blog.created_at
             )
             for blog in blogs
@@ -152,13 +154,15 @@ class BlogService:
             id=str(blog.id),
             title=blog.title,
             body=blog.body,
-            cover_image_url=build_file_url(blog.cover_image_url),
+            cover_image_url=self.file_service.build_file_url(
+                blog.cover_image_url),
             is_liked_by_user=is_liked_by_user,
             total_likes=blog.like_count,
             created_by=UserInfo(
                 id=str(author.id),
                 name=author.name,
-                image_url=build_file_url(author.profile_image_url),
+                image_url=self.file_service.build_file_url(
+                    author.profile_image_url),
             ),
             created_at=blog.created_at,
         )
@@ -171,7 +175,8 @@ class BlogService:
                 created_by=UserInfo(
                     id=str(comment.author.id),
                     name=comment.author.name,
-                    image_url=build_file_url(comment.author.profile_image_url),
+                    image_url=self.file_service.build_file_url(
+                        comment.author.profile_image_url),
                 ),
                 created_at=comment.created_at,
             )

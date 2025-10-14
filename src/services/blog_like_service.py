@@ -7,7 +7,7 @@ from src.repositories.blog_repository import BlogRepository
 from src.repositories.blog_like_repository import BlogLikeRepository
 from src.schemas.blog import UserInfo
 from src.models.blog import Blog
-from src.utils import build_file_url
+from src.services.file_service import FileService
 
 
 class BlogLikeService:
@@ -69,7 +69,7 @@ class BlogLikeService:
                 UserInfo(
                     id=str(user.id),
                     name=user.name,
-                    image_url=build_file_url(user.profile_image_url)
+                    image_url=FileService().build_file_url(user.profile_image_url)
                 )
             )
         return users

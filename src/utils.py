@@ -5,11 +5,9 @@ import uuid
 import jwt
 from passlib.context import CryptContext
 from .config import config
-from fastapi import UploadFile
 from src.exceptions import (
     TokenExpiredError,
     InvalidTokenError,
-    FileValidationError
 )
 
 password_context = CryptContext(schemes=["bcrypt"])
@@ -92,26 +90,3 @@ def verify_refresh_token(token: str) -> Optional[dict[str, Any]]:
         raise TokenExpiredError(token_type="refresh")
     except jwt.PyJWTError:
         raise InvalidTokenError(token_type="refresh")
-
-
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
-MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MB
-
-
-def validate_file(file: UploadFile, content: bytes) -> None:
-    """Validate file type and size."""
-    if not file.filename:
-        return
-    ext = file.filename.split(".")[-1].lower()
-    if ext not in ALLOWED_EXTENSIONS:
-        raise FileValidationError(
-            f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
-        )
-    if len(content) > MAX_FILE_SIZE:
-        raise FileValidationError(
-            "File too large. Max size allowed is 1MB"
-        )
-
-
-def build_file_url(path: str) -> str:
-    return f"{config.server_url}{path}"

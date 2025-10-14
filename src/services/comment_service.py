@@ -1,8 +1,8 @@
+from src.services.file_service import FileService
 from src.repositories.comment_repository import CommentRepository
 from src.models.comment import Comment as CommentModel
 from src.models.user import User
 from src.schemas.blog import CommentCreateModel, UserInfo, Comment, CommentResponse
-from src.utils import build_file_url
 from src.exceptions import ResourceNotFoundError, DatabaseError, AuthorizationError
 
 
@@ -52,7 +52,7 @@ class CommentService:
                 created_by=UserInfo(
                     id=str(author.id),
                     name=author.name,
-                    image_url=build_file_url(author.profile_image_url)
+                    image_url=FileService().build_file_url(author.profile_image_url)
                 ),
                 created_at=comment.created_at
             )

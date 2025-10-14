@@ -1,7 +1,12 @@
 import time
 from pathlib import Path
 from fastapi import UploadFile
-from src.utils import validate_file
+from fastapi import UploadFile
+from src.exceptions import FileValidationError
+from src.config import config
+
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
+MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MB
 
 
 class FileService:
@@ -12,7 +17,7 @@ class FileService:
 
     async def save_uploaded_file(self, file: UploadFile) -> str:
         content = await file.read()
-        validate_file(file, content)
+        self.validate_file(file, content)
 
         timestamp = int(time.time())
         file_name = f"{timestamp}-{file.filename}"
@@ -41,3 +46,20 @@ class FileService:
                 file_path.unlink()
         except Exception as e:
             print(f"Warning: failed to delete file {relative_path}: {e}")
+
+    def validate_file(self, file: UploadFile, content: bytes) -> None:
+        """Validate file type and size."""
+        if not file.filename:
+            return
+        ext = file.filename.split(".")[-1].lower()
+        if ext not in ALLOWED_EXTENSIONS:
+            raise FileValidationError(
+                f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
+            )
+        if len(content) > MAX_FILE_SIZE:
+            raise FileValidationError(
+                "File too large. Max size allowed is 1MB"
+            )
+
+    def build_file_url(self, path: str) -> str:
+        return f"{config.server_url}{path}"
