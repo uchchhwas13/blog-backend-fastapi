@@ -35,9 +35,12 @@ class BlogService:
         user: User
     ) -> BlogModel:
         try:
-            await self._validate_blog_ownership(blog_id, user)
+            blog = await self._validate_blog_ownership(blog_id, user)
+            old_image_url = blog.cover_image_url
             update_data = self._build_update_data(payload)
             updated_blog = await self._update_blog_record(blog_id, update_data)
+            if payload.cover_image_url and old_image_url != payload.cover_image_url:
+                await self.file_service.delete_file_if_exists(old_image_url)
             return self._build_blog_model(updated_blog, user)
         except ResourceNotFoundError:
             raise
