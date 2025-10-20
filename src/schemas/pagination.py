@@ -1,11 +1,11 @@
 from typing import Generic, TypeVar
-from pydantic import Field
+from pydantic import BaseModel, Field
 from fastapi_camelcase import CamelModel
 
 T = TypeVar('T')
 
 
-class PaginationParams(CamelModel):
+class PaginationParams(BaseModel):
     """Query parameters for pagination"""
     page: int = Field(
         default=1, ge=1, description="Page number (starts from 1)")
