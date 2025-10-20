@@ -12,11 +12,6 @@ class PaginationParams(CamelModel):
     page_size: int = Field(default=9, ge=1, le=100,
                            description="Number of items per page")
 
-    @property
-    def offset(self) -> int:
-        """Calculate offset for database queries"""
-        return (self.page - 1) * self.page_size
-
 
 class PaginationMeta(CamelModel):
     current_page: int
