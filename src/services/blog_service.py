@@ -7,6 +7,8 @@ from uuid import UUID
 from src.schemas.blog import Comment as CommentSchema
 from src.exceptions import AuthorizationError, ResourceNotFoundError, DatabaseError
 from src.services.file_service import FileService
+from src.schemas.pagination import PaginationMeta
+from typing import Tuple
 
 
 class BlogService:
@@ -108,10 +110,26 @@ class BlogService:
             updated_at=blog.updated_at
         )
 
-    async def get_blog_list(self) -> list[BlogItem]:
-        blogs = await self.blog_repo.get_all_ordered_by_date()
+    async def get_blog_list(
+        self,
+        page: int = 1,
+        page_size: int = 9
+    ) -> Tuple[list[BlogItem], PaginationMeta]:
+        blogs, total_count = await self.blog_repo.get_paginated_blogs(page, page_size)
 
-        return [
+        total_pages = (total_count + page_size -
+                       1) // page_size
+
+        pagination_meta = PaginationMeta(
+            current_page=page,
+            page_size=page_size,
+            total_items=total_count,
+            total_pages=total_pages,
+            has_next=page < total_pages,
+            has_previous=page > 1
+        )
+
+        blog_items = [
             BlogItem(
                 id=blog.id,
                 title=blog.title,
@@ -121,6 +139,8 @@ class BlogService:
             )
             for blog in blogs
         ]
+
+        return blog_items, pagination_meta
 
     async def get_blog_details(
         self, blog_id: str, user_id: UUID | None
