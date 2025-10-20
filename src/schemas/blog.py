@@ -1,3 +1,4 @@
+from src.schemas.pagination import PaginationMeta
 from datetime import datetime
 from fastapi_camelcase import CamelModel
 import uuid
@@ -44,6 +45,7 @@ class BlogItem(CamelModel):
 
 class BlogListResponse(CamelModel):
     blogs: list[BlogItem]
+    pagination: PaginationMeta
 
 
 class BlogDetail(CamelModel):
