@@ -1,3 +1,4 @@
+from src.schemas.pagination import PaginationParams
 from typing import Annotated
 from src.exceptions import AuthenticationError
 from src.services.blog_like_service import BlogLikeService
@@ -64,10 +65,21 @@ async def delete_blog_post(
 
 
 @blog_router.get('', response_model=APIResponse[BlogListResponse], status_code=status.HTTP_200_OK)
-async def get_blog_list(blog_repo: BlogRepositoryDep):
+async def get_blog_list(
+    blog_repo: BlogRepositoryDep,
+    pagination: PaginationParams = Depends()
+):
     blog_service = BlogService(blog_repo)
-    blog_list = await blog_service.get_blog_list()
-    return APIResponse(data=BlogListResponse(blogs=blog_list), success=True, message="Blog list fetched successfully")
+    blog_items, pagination_meta = await blog_service.get_blog_list(
+        page=pagination.page,
+        page_size=pagination.page_size
+    )
+
+    return APIResponse(
+        data=BlogListResponse(blogs=blog_items, pagination=pagination_meta),
+        success=True,
+        message="Blog list fetched successfully"
+    )
 
 
 @blog_router.get('/{blog_id}', response_model=APIResponse[BlogWithCommentsResponse], status_code=status.HTTP_200_OK)
