@@ -29,14 +29,12 @@ class InvalidCredentialsError(AuthenticationError):
 
 
 class TokenExpiredError(AuthenticationError):
-    """Raised when token has expired."""
 
     def __init__(self, token_type: str = "access"):
         super().__init__(f"{token_type.capitalize()} token has expired")
 
 
 class InvalidTokenError(AuthenticationError):
-    """Raised when token is invalid."""
 
     def __init__(self, token_type: str = "access"):
         super().__init__(f"Invalid {token_type} token")
