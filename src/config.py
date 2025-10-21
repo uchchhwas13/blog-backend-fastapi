@@ -18,8 +18,7 @@ class Settings(BaseSettings):
 
     @property
     def server_url(self) -> str:
-
-        return f"http://{self.SERVER_HOST}:{self.SERVER_PORT}"
+        return f"http://localhost:{self.SERVER_PORT}"
 
 
 config = Settings()
