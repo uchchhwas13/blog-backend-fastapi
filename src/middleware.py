@@ -36,5 +36,6 @@ def register_logging_middleware(app: FastAPI):
                        )
 
     app.add_middleware(TrustedHostMiddleware,
-                       allowed_hosts=["localhost", "127.0.0.1"]
+                       allowed_hosts=["localhost", "127.0.0.1",
+                                      "98.94.19.176", "roy-uchchhwas.duckdns.org"]
                        )
