@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     # Server configuration
     SERVER_HOST: str = ""
     SERVER_PORT: int = 3000
+    DOMAIN_NAME: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -18,7 +19,7 @@ class Settings(BaseSettings):
 
     @property
     def server_url(self) -> str:
-        return f"http://localhost:{self.SERVER_PORT}"
+        return f"https://{self.DOMAIN_NAME}"
 
 
 config = Settings()
