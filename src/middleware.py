@@ -30,6 +30,8 @@ def register_logging_middleware(app: FastAPI):
 
     app.add_middleware(CORSMiddleware,
                        allow_origins=["*"],
+                       allow_origins=[
+                           "https://blog-frontend-pi-nine.vercel.app"],
                        allow_methods=["*"],
                        allow_headers=["*"],
                        allow_credentials=True,
