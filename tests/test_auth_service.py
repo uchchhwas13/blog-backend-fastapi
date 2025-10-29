@@ -27,3 +27,13 @@ class TestAuthService:
         assert result == sample_user
         mock_user_repository.get_by_email.assert_called_once_with(
             sample_user.email)
+
+    @pytest.mark.asyncio
+    async def test_get_user_by_email_returns_none_when_user_not_found(self, auth_service: AuthService, mock_user_repository: AsyncMock):
+        email = "nonexistent@example.com"
+        mock_user_repository.get_by_email.return_value = None
+
+        result = await auth_service.get_user_by_email(email)
+
+        assert result is None
+        mock_user_repository.get_by_email.assert_called_once_with(email)
