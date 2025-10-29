@@ -18,12 +18,12 @@ class TestAuthService:
     @pytest.mark.asyncio
     async def test_get_user_by_email_returns_user_when_email_exists(self, auth_service: AuthService, mock_user_repository: AsyncMock, sample_user: User):
         # Arrange
-        email = "john@example.com"
         mock_user_repository.get_by_email.return_value = sample_user
 
         # Act
-        result = await auth_service.get_user_by_email(email)
+        result = await auth_service.get_user_by_email(sample_user.email)
 
         # Assert
         assert result == sample_user
-        mock_user_repository.get_by_email.assert_called_once_with(email)
+        mock_user_repository.get_by_email.assert_called_once_with(
+            sample_user.email)
