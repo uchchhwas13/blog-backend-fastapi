@@ -9,9 +9,8 @@ from src.config import config
 if __name__ == "__main__":
     uvicorn.run(
         "src.main:app",
-        host=config.SERVER_HOST,
+        host="0.0.0.0",
         port=config.SERVER_PORT,
         reload=True,
         log_level="info"
     )
-
